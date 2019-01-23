@@ -1,0 +1,19 @@
+#issuetype-single-select, div#project-single-select {
+  max-width: none;
+  width: 600px;
+}
+#issuetype-single-select > input, div#project-single-select > input {
+  max-width: none;
+}
+#content #project_container .aui-ss-field#project-field {
+  max-width: none !important;
+  width: 600px;
+  background: red;
+}
+
+.overrun td,
+.overrun td a {
+  color: red !important;
+}
+
+

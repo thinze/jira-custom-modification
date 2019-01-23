@@ -1,0 +1,42 @@
+// --- Version ---
+var vers = '0.2';
+
+// config
+var show_full_proj_title = 1;
+var mark_service_proj	 = 1;
+
+
+// exec modifications
+
+// add project title to task view
+var proj_title = document.querySelector('.css-6p2euf');
+if (show_full_proj_title && proj_title) {
+    document.querySelector('.aui-nav-breadcrumbs').prepend(proj_title.innerText + ' : ')
+}
+
+// mark service projects with color
+if (mark_service_proj) {
+  var projects = document.querySelectorAll("td.project a");
+  if (projects.length) {
+    for (var idx=0; idx<projects.length; idx++) {
+      var prj = projects[idx];
+      if (prj.innerText.endsWith('Support Service')) {
+        prj.style.color = '#f00 !important';
+      }
+    }
+  }
+}
+
+function markOverrunedTasks() {
+    var tasks = document.querySelectorAll('td.duedate');
+    tasks.forEach(
+        function (td) {
+            var t_diff = new Date() - new Date(td.innerText.trim());
+            if (t_diff > 0) {
+                // überlaufen
+                td.closest('tr').className += ' overrun';
+            }
+        }
+    );
+}
+window.setTimeout(markOverrunedTasks, 2000);

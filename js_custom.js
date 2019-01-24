@@ -1,5 +1,5 @@
 // --- Version ---
-var vers = '0.2';
+var vers = '0.3';
 
 // config
 var show_full_proj_title = 1;
@@ -28,14 +28,26 @@ if (mark_service_proj) {
 }
 
 function markOverrunedTasks() {
-    var tasks = document.querySelectorAll('td.duedate');
+    var days_1      = 24 * (60 * 60 * 1000);
+    var days_2      = days_1 * 2;
+    var days_3      = days_1 * 3;
+    var tmp         = new Date().toDateString().split(' ');
+    var today       = new Date([tmp[2], tmp[1], tmp[3]].join('/'));
+    var tasks       = document.querySelectorAll('td.duedate');
     tasks.forEach(
         function (td) {
-            var t_diff = new Date() - new Date(td.innerText.trim());
-            if (t_diff > 0) {
+            var t_diff  = new Date(td.innerText.trim()) - today;
+            var css     = '';
+            if (t_diff < days_1) {
                 // überlaufen
-                td.closest('tr').className += ' overrun';
+                css = ' overrun';
+
+            } else if (t_diff >= days_1 && t_diff < days_2) {
+                css = ' todo-days-1';
+            } else if (t_diff >= days_2 && t_diff < days_3 ) {
+                css = ' todo-days-2';
             }
+            td.closest('tr').className += css;
         }
     );
 }

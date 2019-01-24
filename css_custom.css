@@ -16,4 +16,14 @@
   color: red !important;
 }
 
+.todo-days-1 td,
+.todo-days-1 td a {
+  color: orange !important;
+}
+
+.todo-days-2 td,
+.todo-days-2 td a {
+  color: mediumaquamarine !important;
+}
+
 

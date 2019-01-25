@@ -1,9 +1,10 @@
 // --- Version ---
-var vers = '0.3';
+var vers = '0.31';
 
 // config
-var show_full_proj_title = 1;
-var mark_service_proj	 = 1;
+var show_full_proj_title    = 1;
+var mark_service_proj	    = 1;
+var done_stati              = ['erledigt', 'geschlossen'];
 
 
 // exec modifications
@@ -36,18 +37,21 @@ function markOverrunedTasks() {
     var tasks       = document.querySelectorAll('td.duedate');
     tasks.forEach(
         function (td) {
-            var t_diff  = new Date(td.innerText.trim()) - today;
-            var css     = '';
-            if (t_diff < days_1) {
-                // überlaufen
-                css = ' overrun';
+            var status = td.parentNode.querySelector('td.status').innerText.toLowerCase();
+            if (done_stati.indexOf(status) == -1) {     // status not in done_stati
+                var t_diff  = new Date(td.innerText.trim()) - today;
+                var css     = '';
+                if (t_diff < days_1) {
+                    // überlaufen
+                    css = ' overrun';
 
-            } else if (t_diff >= days_1 && t_diff < days_2) {
-                css = ' todo-days-1';
-            } else if (t_diff >= days_2 && t_diff < days_3 ) {
-                css = ' todo-days-2';
+                } else if (t_diff >= days_1 && t_diff < days_2) {
+                    css = ' todo-days-1';
+                } else if (t_diff >= days_2 && t_diff < days_3 ) {
+                    css = ' todo-days-2';
+                }
+                td.closest('tr').className += css;
             }
-            td.closest('tr').className += css;
         }
     );
 }

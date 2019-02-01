@@ -59,6 +59,7 @@
   cursor: pointer;
 }
 
+#issuetable tr.tr-off,
 .gadget tr.tr-off {
   display: none !important;
 }

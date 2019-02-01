@@ -72,17 +72,18 @@ function addQuickSearch() {
     search.addEventListener('keyup',
         function (e) {
             var field   = e.target;
-            var word    = field.value;
+            var word    = field.value.toLowerCase();
             if (word && word.length > 3) {
                 // filter view
                 field.className = field.className.replace(' filtering', '') + ' filtering';
-                var gadgets = document.querySelectorAll('div.gadget');
+                // filter gadgets
+                var gadgets = document.querySelectorAll('div.gadget, #issuetable');
                 gadgets.forEach(
                     function (widget) {
                         var rows = widget.querySelectorAll('tbody tr');
                         rows.forEach(
                             function (tr) {
-                                if (tr.innerText.indexOf(word) == -1) {
+                                if (tr.innerText.toLowerCase().indexOf(word) == -1) {
                                     // invisible the tr
                                     tr.className = tr.className.replace('tr-off', '') + ' tr-off';
                                 } else {
@@ -95,7 +96,7 @@ function addQuickSearch() {
             } else {
                 // show all rows
                 field.className = field.className.replace(' filtering', '');
-                document.querySelectorAll('.gadget tr.tr-off').forEach(
+                document.querySelectorAll('.gadget tr.tr-off, #issuetable tr.tr-off').forEach(
                     function (tr) {
                         tr.className = tr.className.replace('tr-off', '');
                     }
@@ -110,7 +111,7 @@ function addQuickSearch() {
             var field   = document.querySelector('#quick-search-field');
             field.value = '';
             field.className = field.className.replace(' filtering', '');
-            document.querySelectorAll('.gadget tr.tr-off').forEach(
+            document.querySelectorAll('.gadget tr.tr-off, #issuetable tr.tr-off').forEach(
                 function (tr) {
                     tr.className = tr.className.replace('tr-off', '');
                 }

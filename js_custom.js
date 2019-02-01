@@ -60,4 +60,72 @@ function markOverrunedTasks() {
         }
     );
 }
-window.setTimeout(markOverrunedTasks, 2000);
+
+function addQuickSearch() {
+    var search  = document.createElement('INPUT');
+    var clean   = document.createElement('SPAN');
+    search.id   = 'quick-search-field';
+    clean.id    = 'quick-search-clear';
+    document.querySelector('body').appendChild(search);
+    document.querySelector('body').appendChild(clean);
+
+    search.addEventListener('keyup',
+        function (e) {
+            var field   = e.target;
+            var word    = field.value;
+            if (word && word.length > 3) {
+                // filter view
+                field.className = field.className.replace(' filtering', '') + ' filtering';
+                var gadgets = document.querySelectorAll('div.gadget');
+                gadgets.forEach(
+                    function (widget) {
+                        var rows = widget.querySelectorAll('tbody tr');
+                        rows.forEach(
+                            function (tr) {
+                                if (tr.innerText.indexOf(word) == -1) {
+                                    // invisible the tr
+                                    tr.className = tr.className.replace('tr-off', '') + ' tr-off';
+                                } else {
+                                    tr.className = tr.className.replace('tr-off', '');
+                                }
+                            }
+                        )
+                    }
+                )
+            } else {
+                // show all rows
+                field.className = field.className.replace(' filtering', '');
+                document.querySelectorAll('.gadget tr.tr-off').forEach(
+                    function (tr) {
+                        tr.className = tr.className.replace('tr-off', '');
+                    }
+                )
+            }
+        }
+    );
+    console.log('init');
+    clean.addEventListener('click',
+        function(e) {
+            // clear quick-search-field and disable filtering
+            var field   = document.querySelector('#quick-search-field');
+            field.value = '';
+            field.className = field.className.replace(' filtering', '');
+            document.querySelectorAll('.gadget tr.tr-off').forEach(
+                function (tr) {
+                    tr.className = tr.className.replace('tr-off', '');
+                }
+            )
+        }
+    );
+}
+
+
+/* ---  init script --- */
+
+function startScript() {
+    markOverrunedTasks();
+    addQuickSearch();
+}
+
+
+window.setTimeout(startScript, 2000);

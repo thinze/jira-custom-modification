@@ -26,4 +26,39 @@
   color: mediumaquamarine !important;
 }
 
+#quick-search-field {
+  display: inline-block;
+  position: fixed;
+  z-index: 99999;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 300px;
+  max-width: 50%;
+  background: #eee;
+  padding: 2px;
+}
+#quick-search-field.filtering {
+  background: lightgreen;
+}
+#quick-search-clear {
+  display: inline-block;
+  position: fixed;
+  width: 300px;
+  max-width: 50%;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  height: 1em;
+  background: darkred;
+  margin-left: 1em;
+  z-index: 99998;
+  padding: 3px;
+}
+#quick-search-clear:hover {
+  cursor: pointer;
+}
 
+.gadget tr.tr-off {
+  display: none !important;
+}

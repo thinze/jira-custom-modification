@@ -37,7 +37,12 @@ function markOverrunedTasks() {
     var tasks       = document.querySelectorAll('td.duedate');
     tasks.forEach(
         function (td) {
-            var status = td.parentNode.querySelector('td.status').innerText.toLowerCase();
+            var status = td.parentNode.querySelector('td.status');
+            if (status) {
+                status = status.innerText.toLowerCase();
+            } else {    // Fallback if td.status doesnt exists
+                status = 'offen';
+            }
             if (done_stati.indexOf(status) == -1) {     // status not in done_stati
                 var t_diff  = new Date(td.innerText.trim()) - today;
                 var css     = '';

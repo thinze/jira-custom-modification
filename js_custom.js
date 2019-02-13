@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         jira-custom-modification
 // @namespace    http://tampermonkey.net/
-// @version      0.34
+// @version      0.34.2
 // @description  add some additional features for JIRA
 // @author       T. Hinze
 // @match        https://positivmultimedia.atlassian.net/*
@@ -205,7 +205,7 @@
     }
 
     function useAlwaysOldIssueView() {
-        var a = document.querySelector("a[href*='?oldIssueView=true']").click();
+        var a = document.querySelector("a[href*='?oldIssueView=true']");
         if (a) {
             a.click();
         }

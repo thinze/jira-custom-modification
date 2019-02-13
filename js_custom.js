@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         jira-custom-modification
 // @namespace    http://tampermonkey.net/
-// @version      0.32
+// @version      0.33
 // @description  add some additional features for JIRA
 // @author       T. Hinze
 // @match        https://positivmultimedia.atlassian.net/*
@@ -14,7 +14,7 @@
 
     // --- Version ---
     var js_debug                = 1;
-    var js_version              = '0.32';
+    var js_version              = '0.33';
 
     // config
     var show_full_proj_title    = 1;

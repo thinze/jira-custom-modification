@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         jira-custom-modification
 // @namespace    http://tampermonkey.net/
-// @version      0.34.3
+// @version      0.34.4
 // @description  add some additional features for JIRA
 // @author       T. Hinze
 // @match        https://positivmultimedia.atlassian.net/*
@@ -70,7 +70,10 @@
     // add project title to task view
     var proj_title = document.querySelector('.css-6p2euf');
     if (show_full_proj_title && proj_title) {
-        document.querySelector('.aui-nav-breadcrumbs').prepend(proj_title.innerText + ' : ')
+        var bc = document.querySelector('.aui-nav-breadcrumbs');
+        if (bc) {
+            bc.prepend(proj_title.innerText + ' : ')
+        }
     }
 
     // mark service projects with color

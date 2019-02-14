@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         jira-custom-modification
 // @namespace    http://tampermonkey.net/
-// @version      0.34.4
+// @version      0.35.0
 // @description  add some additional features for JIRA
 // @author       T. Hinze
 // @match        https://positivmultimedia.atlassian.net/*
@@ -216,6 +216,13 @@
         }
     }
 
+    /**
+     * exec some tasks after the page has loading finished
+     */
+    function pageLoadFinish() {
+        window.clearInterval(watcher1); // looking for old-issue-view-link
+    }
+
 
     /* ---  init script --- */
 
@@ -228,5 +235,6 @@
 
 
     window.setTimeout(startScript, 2000);
+    window.addEventListener('load', pageLoadFinish);
 
 })();

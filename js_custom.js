@@ -223,7 +223,7 @@
         insertCss(css);
         markOverrunedTasks();
         addQuickSearch();
-        window.setIntervall(useAlwaysOldIssueView, 500);
+        window.setInterval(useAlwaysOldIssueView, 500);
     }
 
 

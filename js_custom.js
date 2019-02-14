@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         jira-custom-modification
 // @namespace    http://tampermonkey.net/
-// @version      0.34.2
+// @version      0.34.3
 // @description  add some additional features for JIRA
 // @author       T. Hinze
 // @match        https://positivmultimedia.atlassian.net/*
@@ -14,6 +14,7 @@
 
     // --- Version ---
     var js_debug                = 1;
+    var watcher1                = null;
 
     // config
     var show_full_proj_title    = 1;
@@ -207,6 +208,7 @@
     function useAlwaysOldIssueView() {
         var a = document.querySelector("a[href*='?oldIssueView=true']");
         if (a) {
+            window.clearInterval(watcher1);
             a.click();
         }
     }
@@ -218,7 +220,7 @@
         insertCss(css);
         markOverrunedTasks();
         addQuickSearch();
-        useAlwaysOldIssueView();
+        window.setIntervall(useAlwaysOldIssueView, 500);
     }
 
 

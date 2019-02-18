@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         jira-custom-modification
 // @namespace    http://tampermonkey.net/
-// @version      0.35.0
+// @version      0.36.0
 // @description  add some additional features for JIRA
 // @author       T. Hinze
 // @match        https://positivmultimedia.atlassian.net/*
@@ -21,17 +21,27 @@
     var mark_service_proj	    = 1;
     var done_stati              = ['erledigt', 'geschlossen'];
 
-    var css = '' +
+    var action_css = '' +
+        '#my-jira-actions { position:fixed; background:rgba(0, 0, 0, 0.65); padding:5px; z-index:99999; top:25%; left:160px; ' +
+        '  transform:translate(-50%, 0); }' +
+        '#my-jira-actions h6 { color: #ccc; margin: -5px 0 5px; padding: 0; } ' +
+        '#my-jira-actions .row {}' +
+        '#my-jira-actions .row button { font-size:90%; margin:1px; }' +
+        '#my-jira-actions .row button:hover { background:green; color:#fff; }' +
+        '#my-jira-actions .row button:active { background:black; }' +
+        ' ';
+
+    var css = action_css +
     '#issuetype-single-select, div#project-single-select { max-width: none; width: 600px; } ' +
     '#issuetype-single-select > input, div#project-single-select > input { max-width: none; } ' +
     '#content #project_container .aui-ss-field#project-field { max-width: none !important; width: 600px; background: red; } ' +
     '.overrun td, .overrun td a { color: red !important; } ' +
     '.todo-days-1 td, .todo-days-1 td a { color: orange !important; } ' +
     '.todo-days-2 td, .todo-days-2 td a { color: mediumaquamarine !important; } ' +
-    '#quick-search-field { display: inline-block; position: fixed; z-index: 99999; top: 0; left: 50%; transform: translateX(-50%); ' +
-    '        width: 300px; max-width: 50%; background: #eee; padding: 2px; } ' +
+    '#quick-search-field { display: inline-block; position: fixed; z-index: 99999; top: 30%; left: 160px; transform: translateX(-50%); ' +
+    '        width: 290px; max-width: 50%; background: #eee; padding: 2px; } ' +
     '#quick-search-field.filtering { background: lightgreen; } ' +
-    '#quick-search-clear { display: inline-block; position: fixed; width: 300px; max-width: 50%; top: 0; left: 50%; transform: translateX(-50%); ' +
+    '#quick-search-clear { display: inline-block; position: fixed; width: 290px; max-width: 50%; top: 30%; left: 160px; transform: translateX(-50%); ' +
     '        height: 1em; background: darkred; margin-left: 1em; z-index: 99998; padding: 3px; } ' +
     '#quick-search-clear:hover { cursor: pointer; } ' +
     '#issuetable tr.tr-off, .gadget tr.tr-off { display: none !important; } ' +
@@ -128,8 +138,8 @@
         var clean   = document.createElement('SPAN');
         search.id   = 'quick-search-field';
         clean.id    = 'quick-search-clear';
-        document.querySelector('body').appendChild(search);
-        document.querySelector('body').appendChild(clean);
+        document.querySelector('#page-body').appendChild(search);
+        document.querySelector('#page-body').appendChild(clean);
 
         search.addEventListener('keyup',
             function (e) {
@@ -207,6 +217,12 @@
                 )
             }
         );
+        // update gadget height
+        document.querySelectorAll('.gadget-conatiner h3.dashboard-item-title').forEach(
+            function(item) {
+
+            }
+        )
     }
 
     function useAlwaysOldIssueView() {
@@ -231,24 +247,58 @@
         window.clearInterval(watcher1); // looking for old-issue-view-link
     }
 
+    function addDashboardFoldActions() {
+        var dashboard = document.querySelector('#dashboard-content');
+        if (dashboard) {
+            // create actions
+            var html = '' +
+                '<h6>Actions</h6>' +
+                '<div class="row">' +
+                '<button id="widgets-collapse" data-callback="widgetsCollapseAll" class="action">collapse</button><button id="widgets-expand" data-callback="widgetsExpandAll" class="action">expand</button>' +
+                '</div>';
+            var div         = document.createElement('DIV');
+            div.id          = 'my-jira-actions';
+            div.innerHTML   = html.trim();
+            document.querySelector('#page-body').appendChild(div);
+            // bind actions
+            document.querySelector('#my-jira-actions #widgets-collapse').addEventListener('click', widgetsCollapseAll);
+            document.querySelector('#my-jira-actions #widgets-expand').addEventListener('click', widgetsExpandAll);
+        }
+    }
+
+    function widgetsCollapseAll() {
+        var widgets = document.querySelectorAll('.dashboard-item-content');
+        widgets.forEach(function(item, idx) {
+            if (item.className.indexOf(' minimization') == -1) {
+                item.className = item.className + ' minimization';
+                item.previousSibling.querySelector('.dashboard-item-title').dispatchEvent(new Event('dblclick'));
+            }
+        });
+    }
+
+    function widgetsExpandAll() {
+        var widgets = document.querySelectorAll('.dashboard-item-content.minimization');
+        widgets.forEach(function(item, idx) {
+            item.className = item.className.replace(' minimization', '');
+            item.previousSibling.querySelector('.dashboard-item-title').dispatchEvent(new Event('dblclick'));
+        });
+        window.resize();
+    }
+
 
     /* ---  init script --- */
 
     function startScript() {
         insertCss(css);
+        addDashboardFoldActions();
         markOverrunedTasks();
         addQuickSearch();
         // old:
     }
 
-    // instant
+    // instant (DOM Ready)
     window.setTimeout(startScript, 1000);
     watcher1 = window.setInterval(useAlwaysOldIssueView, 100);
-
-    // DOM ready
-    document.addEventListener("DOMContentLoaded", function(event) {
-        // put code here
-    });
 
     // window loaded
     window.addEventListener("load", function(event) {

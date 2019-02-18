@@ -35,6 +35,7 @@
     '        height: 1em; background: darkred; margin-left: 1em; z-index: 99998; padding: 3px; } ' +
     '#quick-search-clear:hover { cursor: pointer; } ' +
     '#issuetable tr.tr-off, .gadget tr.tr-off { display: none !important; } ' +
+    '#wait-for-loading { position: absolute; z-index: 99999; width: 250px; height: auto; top: 30%; left: 50%; transform: translate(-50%, -50%); filter: blur(0); opacity: 0.8; }' +
     '';
 
 
@@ -212,7 +213,14 @@
         var a = document.querySelector("a[href*='?oldIssueView=true']");
         if (a) {
             window.clearInterval(watcher1);
-            a.click();
+            window.stop();
+            if (!document.querySelector('#wait-for-loading')) {
+                var blur = document.createElement('IMG');
+                blur.src = 'https://meinesachsenzeit.de/szapp/images/loading.gif';
+                blur.id = 'wait-for-loading';
+                document.querySelector('#jira-frontend').append(blur);
+                // a.click();
+            }
         }
     }
 
@@ -230,11 +238,21 @@
         insertCss(css);
         markOverrunedTasks();
         addQuickSearch();
-        window.setInterval(useAlwaysOldIssueView, 500);
+        // old:
     }
 
+    // instant
+    window.setTimeout(startScript, 1000);
+    watcher1 = window.setInterval(useAlwaysOldIssueView, 100);
 
-    window.setTimeout(startScript, 2000);
-    window.addEventListener('load', pageLoadFinish);
+    // DOM ready
+    document.addEventListener("DOMContentLoaded", function(event) {
+        // put code here
+    });
+
+    // window loaded
+    window.addEventListener("load", function(event) {
+        pageLoadFinish();
+    });
 
 })();

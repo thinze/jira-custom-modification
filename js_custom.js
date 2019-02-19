@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         jira-custom-modification
 // @namespace    http://tampermonkey.net/
-// @version      0.36.2
+// @version      0.36.3
 // @description  add some additional features for JIRA
 // @author       T. Hinze
 // @match        https://positivmultimedia.atlassian.net/*
@@ -14,7 +14,7 @@
 
     // --- Version ---
     var js_debug                = 1;
-    var watcher1                = null;
+    var watcher1, watcher2;
 
     // config
     var show_full_proj_title    = 1;
@@ -22,13 +22,16 @@
     var done_stati              = ['erledigt', 'geschlossen'];
 
     var action_css = '' +
-        '#my-jira-actions { position:fixed; background:rgba(0, 0, 0, 0.65); padding:5px; z-index:99999; top:300px; left:160px; ' +
-        '  transform:translate(-50%, 0); }' +
-        '#my-jira-actions h6 { color: #ccc; margin: -5px 0 5px; padding: 0; } ' +
-        '#my-jira-actions .row {}' +
-        '#my-jira-actions .row button { font-size:90%; margin:1px; }' +
-        '#my-jira-actions .row button:hover { background:green; color:#fff; }' +
-        '#my-jira-actions .row button:active { background:black; }' +
+        '#page-body .my-jira-logobox { padding-top: 85px; } ' +
+        '#my-jira-quick-actions { position:fixed; background:rgba(0, 0, 0, 0.65); padding:5px; z-index:99999; top:5px; left:64px; ' +
+        '  /* transform:translate(-50%, 0); */ }' +
+        '#my-jira-quick-actions.hide { display: none; }' +
+        '#my-jira-dashboard-actions { }' +
+        '#my-jira-dashboard-actions h6 { color: #ccc; margin: -5px 0 5px; padding: 0; } ' +
+        '#my-jira-dashboard-actions .row {}' +
+        '#my-jira-dashboard-actions .row button { font-size:90%; margin:1px; }' +
+        '#my-jira-dashboard-actions .row button:hover { background:green; color:#fff; }' +
+        '#my-jira-dashboard-actions .row button:active { background:black; }' +
         ' ';
 
     var css = action_css +
@@ -38,10 +41,10 @@
     '.overrun td, .overrun td a { color: red !important; } ' +
     '.todo-days-1 td, .todo-days-1 td a { color: orange !important; } ' +
     '.todo-days-2 td, .todo-days-2 td a { color: mediumaquamarine !important; } ' +
-    '#quick-search-field { display: inline-block; position: fixed; z-index: 99999; top: 365px; left: 160px; transform: translateX(-50%); ' +
-    '        width: 290px; max-width: 50%; background: #eee; padding: 2px; } ' +
+    '#quick-search-field { display: inline-block; position: fixed; z-index: 99999; top: 65px; left: 64px; /* transform:translateX(-50%); */ ' +
+    '        width: 235px; max-width: none; background: #eee; padding: 2px; } ' +
     '#quick-search-field.filtering { background: lightgreen; } ' +
-    '#quick-search-clear { display: inline-block; position: fixed; width: 290px; max-width: 50%; top: 365px; left: 160px; transform: translateX(-50%); ' +
+    '#quick-search-clear { display: inline-block; position: fixed; width: 235px; max-width: none; top: 65px; left: 64px; /* transform: translateX(-50%); */ ' +
     '        height: 1em; background: darkred; margin-left: 1em; z-index: 99998; padding: 3px; } ' +
     '#quick-search-clear:hover { cursor: pointer; } ' +
     '#issuetable tr.tr-off, .gadget tr.tr-off { display: none !important; } ' +
@@ -160,19 +163,100 @@
     }
 
     /**
+     * looking for link to old issue view and use them
+     */
+    function useAlwaysOldIssueView() {
+        var a = document.querySelector("a[href*='?oldIssueView=true']");
+        if (a) {
+            window.clearInterval(watcher1);
+            window.stop();
+            if (!document.querySelector('#wait-for-loading')) {
+                var blur = document.createElement('IMG');
+                blur.src = 'https://meinesachsenzeit.de/szapp/images/loading.gif';
+                blur.id = 'wait-for-loading';
+                document.querySelector('#jira-frontend').append(blur);
+                a.click();
+            }
+        }
+    }
+
+    /**
+     * add container for quick-actions
+     */
+    function addQuickActions() {
+        var container = document.createElement('DIV');
+        container.id  = 'my-jira-quick-actions';
+        // add new actions to the document
+        document.querySelector('body').appendChild(container);
+        // move sidebar downward
+        var logo_box = document.querySelector('.css-cm9zc8');
+        logo_box.className += ' my-jira-logobox';
+        // add actions
+        addDashboardQuickActions();
+        addQuickSearch();
+
+        // close quick-actions if the sidebar is minimized
+        var btn = document.querySelector('button.css-qm60v3');
+        if (btn) {
+            btn.addEventListener('click', toggleDashboardQuickActions);
+        }
+    }
+
+    /**
+     * enable/disable quick-actions incl. quick-search
+     */
+    function toggleDashboardQuickActions() {
+        var qa = document.querySelector('#my-jira-quick-actions');
+        if (qa) {
+            var logo_box = document.querySelector('.css-cm9zc8');
+            if (qa.className.indexOf('hide') == -1) { // quick-actions visible
+                qa.className += ' hide';
+                logo_box.className = logo_box.className.replace(' my-jira-logobox', '');
+
+            } else { // quick-actions not visible
+                qa.className = qa.className.replace(' hide', '');
+                logo_box.className += ' my-jira-logobox';
+            }
+        }
+    }
+
+    /**
+     * add quick-actions to the dashboard
+     */
+    function addDashboardQuickActions() {
+        var dashboard = document.querySelector('#dashboard-content');
+        if (dashboard) {
+            // create actions
+            var html = '' +
+                '<h6>Actions</h6>' +
+                '<div class="row">' +
+                '<button id="widgets-collapse" data-callback="widgetsCollapseAll" class="action">collapse</button><button id="widgets-expand" data-callback="widgetsExpandAll" class="action">expand</button>' +
+                '</div>';
+            var div         = document.createElement('DIV');
+            div.id          = 'my-jira-dashboard-actions';
+            div.innerHTML   = html.trim();
+            // add new actions to the document
+            document.querySelector('#my-jira-quick-actions').appendChild(div);
+            // bind actions
+            document.querySelector('#my-jira-dashboard-actions #widgets-collapse').addEventListener('click', widgetsCollapseAll);
+            document.querySelector('#my-jira-dashboard-actions #widgets-expand').addEventListener('click', widgetsExpandAll);
+        }
+    }
+
+    /**
      * add quick search field to instant-filtering
      */
     function addQuickSearch() {
-        var body        = document.querySelector('#page-body');
-        var dashboard   = document.querySelector('#dashboard-content');
-        var navigator   = document.querySelector('#content .navigator-body');
-        var search      = document.createElement('INPUT');
-        var clean       = document.createElement('SPAN');
-        search.id       = 'quick-search-field';
-        clean.id        = 'quick-search-clear';
-        if (body && (dashboard || navigator)) {
-            body.appendChild(search);
-            body.appendChild(clean);
+        var quick_actions   = document.querySelector('#my-jira-quick-actions');
+        var dashboard       = document.querySelector('#dashboard-content');
+        var navigator       = document.querySelector('#content .navigator-body');
+        if (quick_actions && (dashboard || navigator)) {
+            var search = document.createElement('INPUT');
+            var clean  = document.createElement('SPAN');
+            search.id  = 'quick-search-field';
+            clean.id   = 'quick-search-clear';
+            quick_actions.appendChild(search);
+            quick_actions.appendChild(clean);
 
             search.addEventListener('keyup',
                 function (e) {
@@ -241,7 +325,6 @@
                     }
                 }
             );
-            console.log('init');
             clean.addEventListener('click',
                 function (e) {
                     // clear quick-search-field and disable filtering
@@ -256,46 +339,6 @@
                     updateGadgets();
                 }
             );
-        }
-    }
-
-    /**
-     * looking for link to old issue view and use them
-     */
-    function useAlwaysOldIssueView() {
-        var a = document.querySelector("a[href*='?oldIssueView=true']");
-        if (a) {
-            window.clearInterval(watcher1);
-            window.stop();
-            if (!document.querySelector('#wait-for-loading')) {
-                var blur = document.createElement('IMG');
-                blur.src = 'https://meinesachsenzeit.de/szapp/images/loading.gif';
-                blur.id = 'wait-for-loading';
-                document.querySelector('#jira-frontend').append(blur);
-                a.click();
-            }
-        }
-    }
-
-    /**
-     * add quick-actions to the dashboard
-     */
-    function addDashboardQuickActions() {
-        var dashboard = document.querySelector('#dashboard-content');
-        if (dashboard) {
-            // create actions
-            var html = '' +
-                '<h6>Actions</h6>' +
-                '<div class="row">' +
-                '<button id="widgets-collapse" data-callback="widgetsCollapseAll" class="action">collapse</button><button id="widgets-expand" data-callback="widgetsExpandAll" class="action">expand</button>' +
-                '</div>';
-            var div         = document.createElement('DIV');
-            div.id          = 'my-jira-actions';
-            div.innerHTML   = html.trim();
-            document.querySelector('#page-body').appendChild(div);
-            // bind actions
-            document.querySelector('#my-jira-actions #widgets-collapse').addEventListener('click', widgetsCollapseAll);
-            document.querySelector('#my-jira-actions #widgets-expand').addEventListener('click', widgetsExpandAll);
         }
     }
 
@@ -325,6 +368,20 @@
     }
 
     /**
+     * wait until sidebar logo exists and then add the quick-actions
+     */
+    function waitForSidebar() {
+        var logo_box = document.querySelector('.css-79elbk');
+        if (logo_box) {
+            window.clearInterval(watcher2);
+            addQuickActions();
+
+        } else {
+            // do nothing beacause it will be called again via interval
+        }
+    }
+
+    /**
      * exec some tasks after the page has loading finished
      */
     function pageLoadFinish() {
@@ -334,8 +391,7 @@
     // ---  init script ---
     function startScript() {
         insertCss(css);
-        addDashboardQuickActions();
-        addQuickSearch();
+        watcher2 = window.setInterval(waitForSidebar, 100);
         markTasksByDeadline();
         markSpecialProjects();
     }

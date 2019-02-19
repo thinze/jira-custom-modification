@@ -261,7 +261,7 @@
                 blur.src = 'https://meinesachsenzeit.de/szapp/images/loading.gif';
                 blur.id = 'wait-for-loading';
                 document.querySelector('#jira-frontend').append(blur);
-                // a.click();
+                a.click();
             }
         }
     }

@@ -30,7 +30,7 @@ In this tutorial I use "TM" as shortcut for the word "Tampermonkey".
 Click on the link above and install TM to your favorit browser. After that you see the TM-Icon right top.
 
 2. **Add a new script**  
-Right-click on that new icon in your browser and click on "Create a new script".
+Right-click on that new icon in your browser and click on "Create a new script".  
 ![pic1](https://c1.staticflickr.com/8/7844/46390822204_603ee56e06.jpg)
 
 3. **Copy source code**  

@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         jira-custom-modification
 // @namespace    http://tampermonkey.net/
-// @version      0.36.1
+// @version      0.36.2
 // @description  add some additional features for JIRA
 // @author       T. Hinze
 // @match        https://positivmultimedia.atlassian.net/*
@@ -111,7 +111,10 @@
         }
     }
 
-    function markOverrunedTasks() {
+    /**
+     * mark tasks by deadline distance (+ 2, + 1, today, overflowed)
+     */
+    function markTasksByDeadline() {
         var days_1      = 24 * (60 * 60 * 1000);
         var days_2      = days_1 * 2;
         var days_3      = days_1 * 3;
@@ -156,13 +159,18 @@
         }, 1);
     }
 
+    /**
+     * add quick search field to instant-filtering
+     */
     function addQuickSearch() {
-        var body    = document.querySelector('#page-body');
-        var search  = document.createElement('INPUT');
-        var clean   = document.createElement('SPAN');
-        search.id   = 'quick-search-field';
-        clean.id    = 'quick-search-clear';
-        if (body) {
+        var body        = document.querySelector('#page-body');
+        var dashboard   = document.querySelector('#dashboard-content');
+        var navigator   = document.querySelector('#content .navigator-body');
+        var search      = document.createElement('INPUT');
+        var clean       = document.createElement('SPAN');
+        search.id       = 'quick-search-field';
+        clean.id        = 'quick-search-clear';
+        if (body && (dashboard || navigator)) {
             body.appendChild(search);
             body.appendChild(clean);
 
@@ -251,6 +259,9 @@
         }
     }
 
+    /**
+     * looking for link to old issue view and use them
+     */
     function useAlwaysOldIssueView() {
         var a = document.querySelector("a[href*='?oldIssueView=true']");
         if (a) {
@@ -266,7 +277,10 @@
         }
     }
 
-    function addDashboardFoldActions() {
+    /**
+     * add quick-actions to the dashboard
+     */
+    function addDashboardQuickActions() {
         var dashboard = document.querySelector('#dashboard-content');
         if (dashboard) {
             // create actions
@@ -285,6 +299,9 @@
         }
     }
 
+    /**
+     * collapse all expanded gadgets
+     */
     function widgetsCollapseAll() {
         var widgets = document.querySelectorAll('.dashboard-item-content');
         widgets.forEach(function(item, idx) {
@@ -295,6 +312,9 @@
         });
     }
 
+    /**
+     * expand all collapsed gadgets
+     */
     function widgetsExpandAll() {
         var widgets = document.querySelectorAll('.dashboard-item-content.minimization');
         widgets.forEach(function(item, idx) {
@@ -314,9 +334,9 @@
     // ---  init script ---
     function startScript() {
         insertCss(css);
-        addDashboardFoldActions();
+        addDashboardQuickActions();
         addQuickSearch();
-        markOverrunedTasks();
+        markTasksByDeadline();
         markSpecialProjects();
     }
 

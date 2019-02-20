@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         jira-custom-modification
 // @namespace    http://tampermonkey.net/
-// @version      0.36.5
+// @version      0.36.6
 // @description  add some additional features for JIRA
 // @author       T. Hinze
 // @match        https://positivmultimedia.atlassian.net/*
@@ -262,7 +262,7 @@
                 function (e) {
                     var field = e.target;
                     var word = field.value.toLowerCase();
-                    if (word && word.length > 3) { // search if 4 or more chars given
+                    if (word && word.length >= 3) { // search if 4 or more chars given
                         // filter view
                         field.className = field.className.replace(' filtering', '') + ' filtering';
                         // expand all gadgets

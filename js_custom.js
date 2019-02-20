@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         jira-custom-modification
 // @namespace    http://tampermonkey.net/
-// @version      0.36.6
+// @version      0.36.7
 // @description  add some additional features for JIRA
 // @author       T. Hinze
 // @match        https://positivmultimedia.atlassian.net/*
@@ -366,7 +366,7 @@
             item.className = item.className.replace(' minimization', '');
             item.previousSibling.querySelector('.dashboard-item-title').dispatchEvent(new Event('dblclick'));
         });
-        window.resize();
+        updateGadgets();
     }
 
     /**

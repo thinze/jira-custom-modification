@@ -40,7 +40,7 @@
     '#content #project_container .aui-ss-field#project-field { max-width: none !important; width: 600px; background: red; } ' +
     '.overrun td, .overrun td a { color: red !important; } ' +
     '.todo-days-1 td, .todo-days-1 td a { color: orange !important; } ' +
-    '.todo-days-2 td, .todo-days-2 td a { color: mediumaquamarine !important; } ' +
+    '.todo-days-2 td, .todo-days-2 td a { color: darkturquoise !important; } ' +
     '#quick-search-field { display: inline-block; position: fixed; z-index: 99999; top: 65px; left: 64px; /* transform:translateX(-50%); */ ' +
     '        width: 235px; max-width: none; background: #eee; padding: 2px; } ' +
     '#quick-search-field.filtering { background: lightgreen; } ' +

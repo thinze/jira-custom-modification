@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         jira-custom-modification
 // @namespace    http://tampermonkey.net/
-// @version      0.36.8
+// @version      0.37.0
 // @description  add some additional features for JIRA
 // @author       T. Hinze
 // @match        https://positivmultimedia.atlassian.net/*
@@ -14,12 +14,19 @@
 
     // --- Version ---
     var js_debug                = 1;
-    var watcher1, watcher2;
+    var cfg, watcher1, watcher2;
 
     // config
     var show_full_proj_title    = 1;
     var mark_service_proj	    = 1;
     var done_stati              = ['erledigt', 'geschlossen'];
+
+    var basic_setup             = {
+        color_day2  : '',
+        color_day1  : '',
+        color_day0  : '',
+        color_over  : ''
+    };
 
     var action_css = '' +
         '#page-body .my-jira-logobox { padding-top: 85px; } ' +
@@ -85,7 +92,41 @@
         Object.assign(elem.style, styles);
     }
 
+    /**
+     * save config to loacal storage
+     *
+     * @param cfg
+     * @returns {boolean}
+     */
+    function saveConfig(data) {
+        var success = false;
+        if (typeof data == 'object') {
+            localStorage['my-jira-cfg'] = data;
+            success = true;
+        }
+        return success;
+    }
+
+    /**
+     * load config from local storage
+     */
+    function loadConfig() {
+        var data    = localStorage['my-jira-cfg'];
+        if (typeof data == 'object') {
+            // do something
+
+        } else {
+            // use default config
+            data = basic_setup;
+        }
+        cfg = data;
+    }
+
     // ===============  functions ==================
+
+    function initSetupDialog() {
+
+    }
 
     /**
      * mark special projects (i.e. Update Service)
@@ -186,7 +227,6 @@
     function addQuickActions() {
         var container = document.createElement('DIV');
         container.id  = 'my-jira-quick-actions';
-        // add new actions to the document
         document.querySelector('body').appendChild(container);
         // move sidebar downward
         var logo_box = document.querySelector('.css-cm9zc8');
@@ -199,6 +239,35 @@
         var btn = document.querySelector('button.css-qm60v3');
         if (btn) {
             btn.addEventListener('click', toggleDashboardQuickActions);
+        }
+
+        // init resize method
+        if (0) {
+            const ro = new ResizeObserver(updateQuickActions);
+            ro.observe(document.querySelector('.css-1o3fej'));  // sidebar div
+            _debug('init sidebar resize observer');
+        } else {
+            const ro = new ResizeObserver( resizes => {
+                resizes.forEach((resize) => {
+                    updateQuickActions();
+                });
+            });
+            ro.observe(document.querySelector('.css-1o3fej'));
+        }
+    }
+
+    /**
+     * update quick actions after resize the sidebar
+     */
+    function updateQuickActions() {
+        var sidebar = document.querySelector('.css-1o3fej');
+        var search  = document.querySelector('#quick-search-field');
+        var clean   = document.querySelector('#quick-search-clear');
+        if (sidebar && search && clean) {
+            var new_width = sidebar.offsetWidth - 20;
+            _debug('new width = ' + new_width);
+            search.style.width = new_width + 'px';
+            clean.style.width = new_width + 'px';
         }
     }
 
@@ -257,6 +326,7 @@
             clean.id   = 'quick-search-clear';
             quick_actions.appendChild(search);
             quick_actions.appendChild(clean);
+            updateQuickActions();
 
             search.addEventListener('keyup',
                 function (e) {
@@ -392,6 +462,8 @@
 
     // ---  init script ---
     function startScript() {
+        loadConfig();
+        initSetupDialog();
         insertCss(css);
         watcher2 = window.setInterval(waitForSidebar, 100);
         markTasksByDeadline();

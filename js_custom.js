@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         jira-custom-modification
 // @namespace    http://tampermonkey.net/
-// @version      0.37.0
+// @version      0.37.1
 // @description  add some additional features for JIRA
 // @author       T. Hinze
 // @match        https://positivmultimedia.atlassian.net/*
@@ -12,7 +12,7 @@
 (function() {
     'use strict';
 
-    // --- Version ---
+    // --- settings ---
     var js_debug                = 1;
     var cfg, watcher1, watcher2;
 
@@ -27,6 +27,16 @@
         color_day0  : '',
         color_over  : ''
     };
+
+    // --- observer ---
+    var sidebar_ro =  new ResizeObserver( entries => {
+        for (let entry of entries) {
+            var cr = entry.contentRect;
+            updateQuickActions(entry.target);
+        }
+    });
+
+    // --- stylesheets ---
 
     var action_css = '' +
         '#page-body .my-jira-logobox { padding-top: 85px; } ' +
@@ -241,31 +251,19 @@
             btn.addEventListener('click', toggleDashboardQuickActions);
         }
 
-        // init resize method
-        if (0) {
-            const ro = new ResizeObserver(updateQuickActions);
-            ro.observe(document.querySelector('.css-1o3fej'));  // sidebar div
-            _debug('init sidebar resize observer');
-        } else {
-            const ro = new ResizeObserver( resizes => {
-                resizes.forEach((resize) => {
-                    updateQuickActions();
-                });
-            });
-            ro.observe(document.querySelector('.css-1o3fej'));
-        }
+        // init method to observe the sidebar resize
+        sidebar_ro.observe(document.querySelector('.my-jira-logobox').parentNode);
     }
 
     /**
      * update quick actions after resize the sidebar
      */
-    function updateQuickActions() {
-        var sidebar = document.querySelector('.css-1o3fej');
+    function updateQuickActions(elem) {
+        var sidebar = document.querySelector('.my-jira-logobox').parentNode;
         var search  = document.querySelector('#quick-search-field');
         var clean   = document.querySelector('#quick-search-clear');
         if (sidebar && search && clean) {
             var new_width = sidebar.offsetWidth - 20;
-            _debug('new width = ' + new_width);
             search.style.width = new_width + 'px';
             clean.style.width = new_width + 'px';
         }

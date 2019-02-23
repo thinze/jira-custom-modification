@@ -252,20 +252,51 @@
         }
 
         // init method to observe the sidebar resize
-        sidebar_ro.observe(document.querySelector('.my-jira-logobox').parentNode);
+        sidebar_ro.observe(logo_box.parentNode);
+    }
+
+    /**
+     * hide the quick-actions
+     */
+    function hideQuickActions() {
+        var qa = document.querySelector('#my-jira-quick-actions');
+        if (qa) {
+            qa.className = qa.className.replace(' hide', '') + ' hide';
+        }
+    }
+
+    /**
+     * show the quick-actions
+     */
+    function showQuickActions() {
+        var qa = document.querySelector('#my-jira-quick-actions');
+        if (qa) {
+            qa.className = qa.className.replace(' hide', '');
+        }
     }
 
     /**
      * update quick actions after resize the sidebar
      */
     function updateQuickActions(elem) {
-        var sidebar = document.querySelector('.my-jira-logobox').parentNode;
-        var search  = document.querySelector('#quick-search-field');
-        var clean   = document.querySelector('#quick-search-clear');
-        if (sidebar && search && clean) {
+        var qa = document.querySelector('#my-jira-quick-actions');
+        var sidebar = document.querySelector('.css-cm9zc8').parentNode;
+        var search = document.querySelector('#quick-search-field');
+        var clean = document.querySelector('#quick-search-clear');
+        if (qa && search && clean) {
+            showQuickActions();
             var new_width = sidebar.offsetWidth - 20;
-            search.style.width = new_width + 'px';
-            clean.style.width = new_width + 'px';
+            if (new_width < 140) { // hide quick-actions
+                hideQuickActions();
+
+            } else {
+                search.style.width = new_width + 'px';
+                clean.style.width = new_width + 'px';
+            }
+
+        } else {
+            // sidebar not open - hide quick-actions
+            hideQuickActions();
         }
     }
 
@@ -276,13 +307,17 @@
         var qa = document.querySelector('#my-jira-quick-actions');
         if (qa) {
             var logo_box = document.querySelector('.css-cm9zc8');
-            if (qa.className.indexOf('hide') == -1) { // quick-actions visible
-                qa.className += ' hide';
-                logo_box.className = logo_box.className.replace(' my-jira-logobox', '');
-
-            } else { // quick-actions not visible
-                qa.className = qa.className.replace(' hide', '');
-                logo_box.className += ' my-jira-logobox';
+            var sidebar_open = document.querySelector('.css-1ufv8rh .css-1sjc3tg')
+            if (sidebar_open) {
+                _debug('sidebar is open');
+                if (qa.className.indexOf('hide') == -1) { // quick-actions visible
+                    qa.className = qa.className.replace(' hide', '') + ' hide';
+                } else { // quick-actions not visible
+                    qa.className = qa.className.replace(' hide', '');
+                }
+            } else {
+                _debug('sidebar is closed');
+                qa.className = qa.className.replace(' hide', '') + ' hide';
             }
         }
     }
@@ -461,8 +496,8 @@
     // ---  init script ---
     function startScript() {
         loadConfig();
-        initSetupDialog();
         insertCss(css);
+        initSetupDialog();
         watcher2 = window.setInterval(waitForSidebar, 100);
         markTasksByDeadline();
         markSpecialProjects();

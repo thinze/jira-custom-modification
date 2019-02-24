@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         jira-custom-modification
 // @namespace    http://tampermonkey.net/
-// @version      0.37.2
+// @version      0.38.0b
 // @description  add some additional features for JIRA
 // @author       T. Hinze
 // @match        https://positivmultimedia.atlassian.net/*
@@ -111,8 +111,9 @@
     function saveConfig(data) {
         var success = false;
         if (typeof data == 'object') {
-            localStorage['my-jira-cfg'] = data;
+            localStorage.setItem('my-jira-cfg', JSON.stringify(data));
             success = true;
+            _debug('cfg saved');
         }
         return success;
     }
@@ -121,15 +122,22 @@
      * load config from local storage
      */
     function loadConfig() {
-        var data    = localStorage['my-jira-cfg'];
-        if (typeof data == 'object') {
-            // do something
-
-        } else {
-            // use default config
-            data = basic_setup;
+        var success = false;
+        var data;
+        try {
+            data = JSON.parse(localStorage.getItem('my-jira-cfg'));
+            cfg = data;
+            success = true;
+            _debug('cfg loaded');
         }
-        cfg = data;
+        catch(err) {
+            // stored cfg incorrect -> save and use default config
+            cfg = basic_setup;
+            saveConfig(cfg);
+            success = false;
+            _debug('cfg loading failed - use basic setup');
+        }
+        return success;
     }
 
     // ===============  functions ==================

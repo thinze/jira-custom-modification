@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         jira-custom-modification
 // @namespace    http://tampermonkey.net/
-// @version      0.38.0b
+// @version      0.4.0b
 // @description  add some additional features for JIRA
 // @author       T. Hinze
 // @match        https://positivmultimedia.atlassian.net/*
@@ -21,12 +21,31 @@
     var mark_service_proj	    = 1;
     var done_stati              = ['erledigt', 'geschlossen'];
 
-    var basic_setup             = {
-        color_day2  : '',
-        color_day1  : '',
-        color_day0  : '',
-        color_over  : ''
-    };
+    // --- config vars ---
+    if (true) {
+
+        var setup_options = {
+            colored_tasks   : {type: 'bool',    label: 'Tasks färben'},
+            color_day2      : {type: 'color',   label: 'in 2 Tagen'},
+            color_day1      : {type: 'color',   label: 'in 1 Tagen'},
+            color_day0      : {type: 'color',   label: 'heute'},
+            color_over      : {type: 'color',   label: 'überlaufen'},
+            old_issue_view  : {type: 'bool',    label: 'alte Task-Ansicht'},
+            quick_search    : {type: 'bool',    label: 'Schnellsuche'},
+            folding_option  : {type: 'bool',    label: 'Folding'}
+        };
+
+        var basic_setup = {
+            colored_tasks: 1,
+            color_day2: '',
+            color_day1: '',
+            color_day0: '',
+            color_over: '',
+            old_issue_view: 1,
+            quick_search: 1,
+            folding_option: 1
+        };
+    }
 
     // --- observer ---
     var sidebar_ro =  new ResizeObserver( entries => {
@@ -36,38 +55,85 @@
         }
     });
 
+    // --- HTML snippets ---
+    if (true) {
+
+        var cfg_html = '<button id="my-jira-cfg-btn">+</button><div id="my-jira-cfg-settings">' +
+            '<nav id="my-jira-cfg-menu">' +
+            '<span id="goto-my-jira-cfg-dashbaord" class=" active">Dashboard</span>' +
+            '<span id="goto-my-jira-cfg-tasks">Tasks</span>' +
+            '<span id="goto-my-jira-cfg-misc">Misc</span>' +
+            // '<button id="my-jira-cfg-save">save</button>' +
+            '</nav>' +
+            '<fieldset id="my-jira-cfg-dashbaord" class="cfg-section active"><div class="inner"><h3>Dashboard-Setting</h3></div></fieldset>' +
+            '<fieldset id="my-jira-cfg-tasks" class="cfg-section"><div class="inner"><h3>Tasks Settings</h3></div></fieldset>' +
+            '<fieldset id="my-jira-cfg-misc" class="cfg-section"><div class="inner"><h3>Misc Settings</h3></div></fieldset>' +
+            '</div>';
+    }
+
     // --- stylesheets ---
+    if (true) {
 
-    var action_css = '' +
-        '#page-body .my-jira-logobox { padding-top: 85px; } ' +
-        '#my-jira-quick-actions { position:fixed; background:rgba(0, 0, 0, 0.65); padding:5px; z-index:99999; top:5px; left:64px; ' +
-        '  /* transform:translate(-50%, 0); */ }' +
-        '#my-jira-quick-actions.hide { display: none; }' +
-        '#my-jira-dashboard-actions { }' +
-        '#my-jira-dashboard-actions h6 { color: #ccc; margin: -5px 0 5px; padding: 0; } ' +
-        '#my-jira-dashboard-actions .row {}' +
-        '#my-jira-dashboard-actions .row button { font-size:90%; margin:1px; }' +
-        '#my-jira-dashboard-actions .row button:hover { background:green; color:#fff; }' +
-        '#my-jira-dashboard-actions .row button:active { background:black; }' +
-        ' ';
+        var menu_width = '100px';
 
-    var css = action_css +
-    '#issuetype-single-select, div#project-single-select { max-width: none; width: 600px; } ' +
-    '#issuetype-single-select > input, div#project-single-select > input { max-width: none; } ' +
-    '#content #project_container .aui-ss-field#project-field { max-width: none !important; width: 600px; background: red; } ' +
-    '.overrun td, .overrun td a { color: red !important; } ' +
-    '.todo-days-1 td, .todo-days-1 td a { color: orange !important; } ' +
-    '.todo-days-2 td, .todo-days-2 td a { color: darkturquoise !important; } ' +
-    '#quick-search-field { display: inline-block; position: fixed; z-index: 99999; top: 65px; left: 64px; /* transform:translateX(-50%); */ ' +
-    '        width: 235px; max-width: none; background: #eee; padding: 2px; } ' +
-    '#quick-search-field.filtering { background: lightgreen; } ' +
-    '#quick-search-clear { display: inline-block; position: fixed; width: 235px; max-width: none; top: 65px; left: 64px; /* transform: translateX(-50%); */ ' +
-    '        height: 1em; background: darkred; margin-left: 1em; z-index: 99998; padding: 3px; } ' +
-    '#quick-search-clear:hover { cursor: pointer; } ' +
-    '#issuetable tr.tr-off, .gadget tr.tr-off { display: none !important; } ' +
-    '#wait-for-loading { position: absolute; z-index: 99999; width: 250px; height: auto; top: 30%; left: 50%; transform: translate(-50%, -50%); filter: blur(0); opacity: 0.8; }' +
-    '';
+        var cfg_css = '' +
+            '#my-jira-cfg-dialog { position: fixed; top: 0; z-index: 9999; } ' +
+            '#my-jira-cfg-btn { width: 24px; height: 24px; background: #444; color: #ccc; margin: 1px; } ' +
+            '#my-jira-cfg-btn:hover { background: #999; color: #fff; } ' +
+            '#my-jira-cfg-btn.open { background: lightgreen; color: #fff; width: 24px; height: 24px; } ' +
+            '#my-jira-cfg-settings { background: #444; border: 1px solid #ccc; display: none; position: relative; padding-left: ' + menu_width + '; } ' +
+            '#my-jira-cfg-settings.open { display: block; } ' +
+            '#my-jira-cfg-menu { background: #666; width: ' + menu_width + '; position: absolute; top: 0; left: 0; border-right: 1px solid #999; height: 100%; } ' +
+            '#my-jira-cfg-menu span { color: #fff; display: block; padding: 4px 2px; margin: 0 0 5px; border-bottom: 1px solid #aaa; } ' +
+            '#my-jira-cfg-menu span.active, ' +
+            '#my-jira-cfg-menu span:hover { background: #ccc; color: #000; cursor: pointer; } ' +
+            '#my-jira-cfg-menu #my-jira-cfg-save { background: #aaa; color: #000; cursor: pointer; position: absolute; bottom: 0; left: 0; width: 100%; } ' +
+            '#my-jira-cfg-menu #my-jira-cfg-save:hover { background: #ccc; color: #333; cursor: pointer; } ' +
+            '#my-jira-cfg-menu #my-jira-cfg-save.saved { background: lightgreen; color: #fff; } ' +
+            '#my-jira-cfg-settings fieldset { display: none; min-width: 200px; min-height: 160px; color: #ccc; } ' +
+            '#my-jira-cfg-settings fieldset.active { display: block; } ' +
+            '#my-jira-cfg-settings fieldset .inner { padding: 3px 5px; } ' +
+            '#my-jira-cfg-settings fieldset .inner h3 { color: #ccc; font-size: 110%; border-bottom: 1px solid #ccc; padding-bottom: 5px; margin-bottom: 5px; } ' +
+            '#my-jira-cfg-settings fieldset .opt-row { margin: 0 0 5px; } ' +
+            '#my-jira-cfg-settings fieldset .opt-row label { display: inline-block; width: 100px; } ' +
+            '#my-jira-cfg-settings fieldset .opt-row input.color { display: inline-block; width: 30px; height: 20px; background: transparent; } ' +
+            '#my-jira-cfg-settings fieldset .opt-row input.bool { display: inline-block; width: 16px; } ' +
+            '#my-jira-cfg-settings fieldset .opt-row input.text { display: inline-block; width: 80px; } ' +
 
+
+
+            '';
+
+        var action_css = '' +
+            '#page-body .my-jira-logobox { padding-top: 85px; } ' +
+            '#my-jira-quick-actions { position:fixed; background:rgba(0, 0, 0, 0.65); padding:5px; z-index:99999; top:5px; left:64px; ' +
+            '  /* transform:translate(-50%, 0); */ }' +
+            '#my-jira-quick-actions.hide { display: none; }' +
+            '#my-jira-dashboard-actions { }' +
+            '#my-jira-dashboard-actions h6 { color: #ccc; margin: -5px 0 5px; padding: 0; } ' +
+            '#my-jira-dashboard-actions .row {}' +
+            '#my-jira-dashboard-actions .row button { font-size:90%; margin:1px; }' +
+            '#my-jira-dashboard-actions .row button:hover { background:green; color:#fff; }' +
+            '#my-jira-dashboard-actions .row button:active { background:black; }' +
+            ' ';
+
+        var css = action_css + cfg_css +
+            '#issuetype-single-select, div#project-single-select { max-width: none; width: 600px; } ' +
+            '#issuetype-single-select > input, div#project-single-select > input { max-width: none; } ' +
+            '#content #project_container .aui-ss-field#project-field { max-width: none !important; width: 600px; background: red; } ' +
+            '.overrun td, .overrun td a { color: red !important; } ' +
+            '.todo-days-1 td, .todo-days-1 td a { color: orange !important; } ' +
+            '.todo-days-2 td, .todo-days-2 td a { color: darkturquoise !important; } ' +
+            '#quick-search-field { display: inline-block; position: fixed; z-index: 99999; top: 65px; left: 64px; /* transform:translateX(-50%); */ ' +
+            '        width: 235px; max-width: none; background: #eee; padding: 2px; } ' +
+            '#quick-search-field.filtering { background: lightgreen; } ' +
+            '#quick-search-clear { display: inline-block; position: fixed; width: 235px; max-width: none; top: 65px; left: 64px; /* transform: translateX(-50%); */ ' +
+            '        height: 1em; background: darkred; margin-left: 1em; z-index: 99998; padding: 3px; } ' +
+            '#quick-search-clear:hover { cursor: pointer; } ' +
+            '#issuetable tr.tr-off, .gadget tr.tr-off { display: none !important; } ' +
+            '#wait-for-loading { position: absolute; z-index: 99999; width: 250px; height: auto; top: 30%; left: 50%; transform: translate(-50%, -50%); filter: blur(0); opacity: 0.8; }' +
+            '';
+    }
 
     // ===============  helper ==================
 
@@ -143,7 +209,183 @@
     // ===============  functions ==================
 
     function initSetupDialog() {
+        var nav = document.querySelector('#navigation-app');
+        var div = document.createElement('DIV');
+        div.id  = 'my-jira-cfg-dialog';
+        div.innerHTML = cfg_html.trim();
+        if (nav) {
+            nav.appendChild(div);
+            document.querySelector('#my-jira-cfg-btn').addEventListener('click', toggleCfgDialog);
+            var items = document.querySelectorAll('#my-jira-cfg-menu span');
+            items.forEach(function (elem) {
+                elem.addEventListener('click', switchCfgSections)
+            });
+            buildCfgOptions();
+            updateCfgSections();
+            // document.querySelector('#my-jira-cfg-save').addEventListener('click', saveCfgSettings);
+        }
+    }
 
+    /**
+     * toggle the complete cfg dialog
+     */
+    function toggleCfgDialog() {
+        var elem = document.querySelector('#my-jira-cfg-settings');
+        if (elem.className.indexOf(' open') == -1) {
+            elem.className += ' open';
+        } else {
+            elem.className = elem.className.replace(' open', '');
+        }
+    }
+
+    /**
+     * switch the cfg dialogs by menu item click
+     * @param e
+     */
+    function switchCfgSections(e) {
+        var clicked = e.target;
+        // enable selected nav item
+        document.querySelectorAll('#my-jira-cfg-menu span').forEach(function(elem) { // dis-active all nav-items
+                elem.className = elem.className.replace(' active', '');
+        });
+        clicked.className += ' active';
+
+        // enable selected section
+        document.querySelectorAll('#my-jira-cfg-settings fieldset').forEach(function(elem) {   // dis-active all sections
+           elem.className = elem.className.replace(' active', '');
+        });
+        // select corresponding elem for clicked element (i.e. #goto-abc-xyz -> #abc-xyz)
+        document.querySelector('#' + clicked.id.replace('goto-', '')).className += ' active';
+    }
+
+    /**
+     * create a option field
+     * @param property
+     * @param container
+     */
+    function createCfgOption(property, container) {
+        if (container) {
+            if (setup_options.hasOwnProperty(property)) {
+                var lbl = document.createElement('LABEL');
+                lbl.htmlFor     = property;
+                lbl.innerHTML   = setup_options[property]['label'];
+                var elem = document.createElement('INPUT');
+                elem.id = 'cfg-' + property;
+                switch (setup_options[property]['type']) {
+                    case 'bool':
+                        elem.type = 'checkbox';
+                        elem.className = 'bool';
+                        elem.dataset.cfg_type = 'bool';
+                        break;
+                    case 'color':
+                        elem.type = 'color';
+                        elem.className = 'color';
+                        elem.dataset.cfg_type = 'color';
+                        break;
+                    case 'text':
+                        elem.type = 'text';
+                        elem.className = 'text';
+                        elem.dataset.cfg_type = 'text';
+                        break;
+                }
+                elem.addEventListener('change', instantSaveCfgOption);
+                var row = document.createElement('DIV');
+                row.className = 'opt-row';
+                row.appendChild(lbl);
+                row.appendChild(elem);
+                container.appendChild(row);
+            }
+        }
+    }
+
+    /**
+     * save instant the config value after element has changed
+     * @param e
+     */
+    function instantSaveCfgOption(e) {
+        var val;
+        var elem = e.target;
+        if (elem) {
+            switch (elem.dataset.cfg_type) {
+                case 'bool':
+                    if (elem.checked) {
+                        val = 1;
+                    } else {
+                        val = 0;
+                    }
+                    cfg[elem.id.replace('cfg-', '')] = val;
+                    break;
+
+                case 'color':
+                    cfg[elem.id.replace('cfg-', '')] = elem.value;
+                    break;
+
+                case 'text':
+                    cfg[elem.id.replace('cfg-', '')] = elem.value;
+                    break;
+            }
+            saveConfig(cfg);
+        }
+    }
+
+    /**
+     * build all config options in separte sections
+     */
+    function buildCfgOptions() {
+        var sec;
+        var cfg_sec = document.querySelector('#my-jira-cfg-settings');
+        if (cfg_sec) {
+            sec = document.querySelector('#my-jira-cfg-dashbaord .inner');
+            if (sec) {
+                createCfgOption('folding_option', sec);
+                createCfgOption('quick_search', sec);
+            }
+            sec = document.querySelector('#my-jira-cfg-tasks .inner');
+            if (sec) {
+                createCfgOption('colored_tasks', sec);
+                createCfgOption('color_over', sec);
+                createCfgOption('color_day0', sec);
+                createCfgOption('color_day1', sec);
+                createCfgOption('color_day2', sec);
+                createCfgOption('old_issue_view', sec);
+            }
+            sec = document.querySelector('#my-jira-cfg-misc .inner');
+            if (sec) {
+                // add fields here
+            }
+        }
+    }
+
+    /**
+     * update all config options with stored values
+     */
+    function updateCfgSections() {
+        var cfg_sec = document.querySelector('#my-jira-cfg-settings');
+        if (cfg_sec) {
+            for (var property in basic_setup) {
+                var opt = document.querySelector('#cfg-' + property);
+                if (opt) {
+                    switch (opt.dataset.cfg_type) {
+                        case 'bool':
+                            if (cfg[property]) {
+                                opt.checked = 'checked';
+                            } else {
+                                opt.checked = '';
+                            }
+                            break;
+                        case 'color':
+                            if (cfg[property]) {
+                                opt.value = cfg[property];
+                            } else {
+                                opt.value = '';
+                            }
+                            break;
+                        case 'text':
+                            break;
+                    }
+                }
+            }
+        }
     }
 
     /**
@@ -499,13 +741,13 @@
      */
     function pageLoadFinish() {
         window.clearInterval(watcher1); // remove watcher for old-issue-view-link
+        initSetupDialog();
     }
 
     // ---  init script ---
     function startScript() {
         loadConfig();
         insertCss(css);
-        initSetupDialog();
         watcher2 = window.setInterval(waitForSidebar, 100);
         markTasksByDeadline();
         markSpecialProjects();

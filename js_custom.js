@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         jira-custom-modification
 // @namespace    http://tampermonkey.net/
-// @version      0.4.6b
+// @version      0.4.7b
 // @description  add some additional features for JIRA
 // @author       T. Hinze
 // @match        https://positivmultimedia.atlassian.net/*
@@ -73,7 +73,7 @@
             '</nav>' +
             '<fieldset id="my-jira-cfg-dashbaord" class="cfg-section active"><div class="inner"><h3>Dashboard-Setting</h3></div></fieldset>' +
             '<fieldset id="my-jira-cfg-tasks" class="cfg-section"><div class="inner"><h3>Tasks Settings</h3></div></fieldset>' +
-            '<fieldset id="my-jira-cfg-misc" class="cfg-section"><div class="inner"><h3>Misc Settings</h3></div></fieldset>' +
+            '<fieldset id="my-jira-cfg-misc" class="cfg-section"><div class="inner"><h3>Misc Settings</h3></div><button id="my-jira-cfg-help">Help</button></fieldset>' +
             '</div>';
     }
 
@@ -105,9 +105,8 @@
             '#my-jira-cfg-settings fieldset .opt-row input.color { display: inline-block; width: 30px; height: 20px; background: transparent; } ' +
             '#my-jira-cfg-settings fieldset .opt-row input.bool { display: inline-block; width: 16px; } ' +
             '#my-jira-cfg-settings fieldset .opt-row input.text { display: inline-block; width: 80px; } ' +
-
-
-
+            '#my-jira-cfg-help { margin: 0 auto; width: 90%; display: block; } ' +
+            '#my-jira-cfg-help:hover {  background: #999; color: #fff; } ' +
             '';
 
         var action_css = '' +
@@ -184,6 +183,15 @@
         window.setTimeout(function() { // little bit delay before change styles again
             setStylesOnElement(document.querySelector('#page-body'), {width: 'auto', minWidth: 'fit-content'});
         }, 1);
+    }
+
+    /**
+     * open a new tab and set the focus
+     * @param url
+     */
+    function openNewTab(url) {
+        var win = window.open(url, '_blank');
+        win.focus();
     }
 
     // =============== config dialog ===============
@@ -381,6 +389,11 @@
             sec = document.querySelector('#my-jira-cfg-misc .inner');
             if (sec) {
                 // add fields here
+                document.querySelector('#my-jira-cfg-help').addEventListener('click',
+                    function() {
+                        openNewTab('https://github.com/thinze/jira-custom-modification/blob/dev/HELP.md');
+                    }
+                );
             }
         }
     }

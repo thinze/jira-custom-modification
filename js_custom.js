@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         jira-custom-modification
 // @namespace    http://tampermonkey.net/
-// @version      0.4.2b
+// @version      0.4.5b
 // @description  add some additional features for JIRA
 // @author       T. Hinze
 // @match        https://positivmultimedia.atlassian.net/*
@@ -14,7 +14,7 @@
 
     // --- settings ---
     var js_debug                = 1;
-    var cfg, watcher1, watcher2;
+    var watcher1, watcher2;
 
     // config
     var show_full_proj_title    = 1;
@@ -22,19 +22,21 @@
     var done_stati              = ['erledigt', 'geschlossen'];
 
     // --- config vars ---
+    var cfg                     = {};
     if (true) {
 
         var setup_options = {
-            colored_tasks   : {type: 'bool',    label: 'Tasks färben'},
-            color_day2      : {type: 'color',   label: 'in 2 Tagen'},
-            color_day1      : {type: 'color',   label: 'in 1 Tagen'},
-            color_day0      : {type: 'color',   label: 'heute'},
-            color_over      : {type: 'color',   label: 'überlaufen'},
-            old_issue_view  : {type: 'bool',    label: 'alte Task-Ansicht'},
-            warn_ups        : {type: 'bool',    label: 'markiere Service-Proj.'},
-            show_projectname: {type: 'bool',    label: 'zeige Projektname'},
-            quick_search    : {type: 'bool',    label: 'Schnellsuche'},
-            quick_actions   : {type: 'bool',    label: 'Quick-Actions'}
+            colored_tasks   : {type: 'bool',    label: 'Tasks färben',          val: 1},
+            color_ups       : {type: 'color',   label: 'Service-Proj.',         val: 'red'},
+            color_day2      : {type: 'color',   label: 'in 2 Tagen',            val: 'lightblue'},
+            color_day1      : {type: 'color',   label: 'in 1 Tagen',            val: 'orange'},
+            color_day0      : {type: 'color',   label: 'heute',                 val: 'magenta'},
+            color_over      : {type: 'color',   label: 'überlaufen',            val: 'red'},
+            old_issue_view  : {type: 'bool',    label: 'alte Task-Ansicht',     val: 1},
+            warn_ups        : {type: 'bool',    label: 'markiere Service-Proj.',val: 0},
+            show_projectname: {type: 'bool',    label: 'zeige Projektname',     val: 0},
+            quick_search    : {type: 'bool',    label: 'Schnellsuche',          val: 1},
+            quick_actions   : {type: 'bool',    label: 'Quick-Actions',         val: 1}
         };
 
         var basic_setup = {
@@ -55,7 +57,7 @@
     var sidebar_ro =  new ResizeObserver( entries => {
         for (let entry of entries) {
             var cr = entry.contentRect;
-            updateQuickActions(entry.target);
+            updateQuickSearch(entry.target);
         }
     });
 
@@ -125,9 +127,6 @@
             '#issuetype-single-select, div#project-single-select { max-width: none; width: 600px; } ' +
             '#issuetype-single-select > input, div#project-single-select > input { max-width: none; } ' +
             '#content #project_container .aui-ss-field#project-field { max-width: none !important; width: 600px; background: red; } ' +
-            '.overrun td, .overrun td a { color: red !important; } ' +
-            '.todo-days-1 td, .todo-days-1 td a { color: orange !important; } ' +
-            '.todo-days-2 td, .todo-days-2 td a { color: darkturquoise !important; } ' +
             '#quick-search-field { display: inline-block; position: fixed; z-index: 99999; top: 65px; left: 64px; /* transform:translateX(-50%); */ ' +
             '        width: 235px; max-width: none; background: #eee; padding: 2px; } ' +
             '#quick-search-field.filtering { background: lightgreen; } ' +
@@ -156,8 +155,11 @@
      * insert custom CSS
      *
      */
-    function insertCss(css) {
+    function insertCss(css, css_id) {
         var style   = document.createElement('STYLE');
+        if (css_id) {
+            style.id = css_id;
+        }
         style.innerHTML = css;
         document.querySelector('head').appendChild(style);
     }
@@ -210,17 +212,23 @@
         var data;
         try {
             data = JSON.parse(localStorage.getItem('my-jira-cfg'));
-            cfg = data;
+            if (data === null) {
+                throw "cfg loading error";
+            }
             success = true;
             _debug('cfg loaded');
         }
         catch(err) {
-            // stored cfg incorrect -> save and use default config
-            cfg = basic_setup;
+            // stored cfg incorrect -> save and use default values
+            for (var property in setup_options) {
+                var val = setup_options[property]['val'];
+                cfg[property] = val;
+            }
             saveConfig(cfg);
             success = false;
-            _debug('cfg loading failed - use basic setup');
+            _debug('cfg loading failed - use default settings');
         }
+        cfg = data;
         return success;
     }
 
@@ -355,9 +363,10 @@
         if (cfg_sec) {
             sec = document.querySelector('#my-jira-cfg-dashbaord .inner');
             if (sec) {
-                createCfgOption('folding_option', sec);
+                createCfgOption('quick_actions', sec);
                 createCfgOption('quick_search', sec);
                 createCfgOption('warn_ups', sec);
+                createCfgOption('color_ups', sec);
             }
             sec = document.querySelector('#my-jira-cfg-tasks .inner');
             if (sec) {
@@ -382,7 +391,7 @@
     function updateCfgSections() {
         var cfg_sec = document.querySelector('#my-jira-cfg-settings');
         if (cfg_sec) {
-            for (var property in basic_setup) {
+            for (var property in setup_options) {
                 var opt = document.querySelector('#cfg-' + property);
                 if (opt) {
                     switch (opt.dataset.cfg_type) {
@@ -471,7 +480,7 @@
     /**
      * update quick actions after resize the sidebar
      */
-    function updateQuickActions(elem) {
+    function updateQuickSearch(elem) {
         var qa = document.querySelector('#my-jira-quick-actions');
         var sidebar = document.querySelector('.css-cm9zc8').parentNode;
         var search = document.querySelector('#quick-search-field');
@@ -489,7 +498,7 @@
 
         } else {
             // sidebar not open - hide quick-actions
-            hideQuickActions();
+            // hideQuickActions();
         }
     }
 
@@ -565,103 +574,6 @@
         updateGadgets();
     }
 
-    // ===============  functions ==================
-
-    /**
-     * mark special projects (i.e. Update Service)
-     */
-    function markSpecialProjects() {
-        if (cfg.warn_ups) {
-            // mark service projects with color
-            if (mark_service_proj) {
-                var projects = document.querySelectorAll("td.project a");
-                if (projects.length) {
-                    for (var idx = 0; idx < projects.length; idx++) {
-                        var prj = projects[idx];
-                        if (prj.innerText.endsWith('Support Service')) {
-                            prj.style.color = '#f00 !important';
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    /**
-     * add project name on task view
-     *
-     */
-    function addProjektNameInTaskView() {
-        if (cfg.show_projectname) {
-            // add project title to task view
-            var proj_title = document.querySelector('.css-6p2euf');
-            if (show_full_proj_title && proj_title) {
-                var bc = document.querySelector('.aui-nav-breadcrumbs');
-                if (bc) {
-                    bc.prepend(proj_title.innerText + ' : ')
-                }
-            }
-        }
-    }
-
-    /**
-     * mark tasks by deadline distance (+ 2, + 1, today, overflowed)
-     */
-    function markTasksByDeadline() {
-        if (cfg.colored_tasks) {
-            var days_1 = 24 * (60 * 60 * 1000);
-            var days_2 = days_1 * 2;
-            var days_3 = days_1 * 3;
-            var tmp = new Date().toDateString().split(' ');
-            var today = new Date([tmp[2], tmp[1], tmp[3]].join('/'));
-            var tasks = document.querySelectorAll('td.duedate');
-            tasks.forEach(
-                function (td) {
-                    var status = td.parentNode.querySelector('td.status');
-                    if (status) {
-                        status = status.innerText.toLowerCase();
-                    } else {    // Fallback if td.status doesnt exists
-                        status = 'offen';
-                    }
-                    if (done_stati.indexOf(status) == -1) {     // status not in done_stati
-                        var t_diff = new Date(td.innerText.trim()) - today;
-                        var css = '';
-                        if (t_diff < days_1) {
-                            // überlaufen
-                            css = ' overrun';
-
-                        } else if (t_diff >= days_1 && t_diff < days_2) {
-                            css = ' todo-days-1';
-                        } else if (t_diff >= days_2 && t_diff < days_3) {
-                            css = ' todo-days-2';
-                        }
-                        td.closest('tr').className += css;
-                    }
-                }
-            );
-        }
-    }
-
-    /**
-     * looking for link to old issue view and use them
-     */
-    function useAlwaysOldIssueView() {
-        if (cfg.old_issue_view) {
-            var a = document.querySelector("a[href*='?oldIssueView=true']");
-            if (a) {
-                window.clearInterval(watcher1);
-                window.stop();
-                if (!document.querySelector('#wait-for-loading')) {
-                    var blur = document.createElement('IMG');
-                    blur.src = 'https://meinesachsenzeit.de/szapp/images/loading.gif';
-                    blur.id = 'wait-for-loading';
-                    document.querySelector('#jira-frontend').append(blur);
-                    a.click();
-                }
-            }
-        }
-    }
-
     /**
      * add quick search field to instant-filtering
      */
@@ -677,7 +589,7 @@
                 clean.id = 'quick-search-clear';
                 quick_actions.appendChild(search);
                 quick_actions.appendChild(clean);
-                updateQuickActions();
+                updateQuickSearch();
 
                 search.addEventListener('keyup',
                     function (e) {
@@ -766,6 +678,128 @@
         }
     }
 
+    // ===============  functions ==================
+
+    /**
+     * mark special projects (i.e. Update Service)
+     */
+    function markSpecialProjects() {
+        if (cfg.warn_ups) {
+            // replace older ups styles
+            var styles = document.querySelector('#ups-styles');
+            if (styles) {
+                styles.parentNode.removeChild(styles);
+            }
+            // add new ups styles
+            var css = '' +
+                '.project a.special-prj { color: ' + cfg.color_ups + '!important; } ' +
+                '';
+            insertCss(css, 'ups-styles');
+            // mark service projects with color
+            var projects = document.querySelectorAll("td.project a");
+            if (projects.length) {
+                    for (var idx = 0; idx < projects.length; idx++) {
+                        var prj = projects[idx];
+                        if (prj.innerText.endsWith('Support Service')) {
+                            prj.className = prj.className.replace(' special-prj', '') + ' special-proj';
+                        }
+                    }
+                }
+        }
+    }
+
+    /**
+     * add project name on task view
+     *
+     */
+    function addProjektNameInTaskView() {
+        if (cfg.show_projectname) {
+            // add project title to task view
+            var proj_title = document.querySelector('.css-6p2euf');
+            if (show_full_proj_title && proj_title) {
+                var bc = document.querySelector('.aui-nav-breadcrumbs');
+                if (bc) {
+                    bc.prepend(proj_title.innerText + ' : ')
+                }
+            }
+        }
+    }
+
+    /**
+     * mark tasks by deadline distance (+ 2, + 1, today, overflowed)
+     */
+    function markTasksByDeadline() {
+        if (cfg.colored_tasks) {
+            // replace older styles
+            var styles = document.querySelector('#colored-tasks');
+            if (styles) {
+                styles.parentNode.removeChild(styles);
+            }
+            // build new task colors
+            var css = '' +
+                '.overrun td, .overrun td a { color: ' + cfg.color_over + '!important; } ' +
+                '.todo-days-0 td, .todo-days-0 td a { color: ' + cfg.color_day0 + ' !important; } ' +
+                '.todo-days-1 td, .todo-days-1 td a { color: ' + cfg.color_day1 + ' !important; } ' +
+                '.todo-days-2 td, .todo-days-2 td a { color: ' + cfg.color_day2 + ' !important; } ' +
+                '';
+            insertCss(css, 'colored-tasks');
+            // calc deadline distance
+            var days_0 = 24 * (60 * 60 * 1000);
+            var days_1 = days_0 * 2;
+            var days_2 = days_0 * 3;
+            var tmp = new Date().toDateString().split(' ');
+            var today = new Date([tmp[2], tmp[1], tmp[3]].join('/'));
+            var tasks = document.querySelectorAll('td.duedate');
+            tasks.forEach(
+                function (td) {
+                    var status = td.parentNode.querySelector('td.status');
+                    if (status) {
+                        status = status.innerText.toLowerCase();
+                    } else {    // Fallback if td.status doesnt exists
+                        status = 'offen';
+                    }
+                    if (td.innerText.trim() == '26/Feb/19') {
+                        var a = 1;
+                    }
+                    if (done_stati.indexOf(status) == -1) {     // status not in done_stati
+                        var t_diff = new Date(td.innerText.trim()) - today;
+                        var elem_css = '';
+                        if (t_diff < 0) {
+                            elem_css = ' overrun';
+                        } else if (t_diff < days_0) {
+                            elem_css = ' todo-days-0';  // deadline in 0 days
+                        } else if (t_diff >= days_0 && t_diff < days_1) {
+                            elem_css = ' todo-days-1'; // deadline in 1 day
+                        } else if (t_diff >= days_1 && t_diff < days_2) {
+                            elem_css = ' todo-days-2'; // deadline in 2 days
+                        }
+                        td.closest('tr').className += elem_css;
+                    }
+                }
+            );
+        }
+    }
+
+    /**
+     * looking for link to old issue view and use them
+     */
+    function useAlwaysOldIssueView() {
+        if (cfg.old_issue_view) {
+            var a = document.querySelector("a[href*='?oldIssueView=true']");
+            if (a) {
+                window.clearInterval(watcher1);
+                window.stop();
+                if (!document.querySelector('#wait-for-loading')) {
+                    var blur = document.createElement('IMG');
+                    blur.src = 'https://meinesachsenzeit.de/szapp/images/loading.gif';
+                    blur.id = 'wait-for-loading';
+                    document.querySelector('#jira-frontend').append(blur);
+                    a.click();
+                }
+            }
+        }
+    }
+
     /**
      * exec some tasks after the page has loading finished
      */
@@ -778,6 +812,7 @@
     function startScript() {
         loadConfig();
         insertCss(css);
+        watcher1 = window.setInterval(useAlwaysOldIssueView, 100);
         watcher2 = window.setInterval(waitForSidebar, 100);
         markTasksByDeadline();
         markSpecialProjects();
@@ -786,7 +821,6 @@
 
     // ---  instant (DOM Ready)   ---
     window.setTimeout(startScript, 1000);
-    watcher1 = window.setInterval(useAlwaysOldIssueView, 100);
 
     // ---  window loaded  ---
     window.addEventListener("load", function(event) {

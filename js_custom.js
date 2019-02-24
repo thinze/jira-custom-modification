@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         jira-custom-modification
 // @namespace    http://tampermonkey.net/
-// @version      0.4.0b
+// @version      0.4.2b
 // @description  add some additional features for JIRA
 // @author       T. Hinze
 // @match        https://positivmultimedia.atlassian.net/*
@@ -31,8 +31,10 @@
             color_day0      : {type: 'color',   label: 'heute'},
             color_over      : {type: 'color',   label: 'überlaufen'},
             old_issue_view  : {type: 'bool',    label: 'alte Task-Ansicht'},
+            warn_ups        : {type: 'bool',    label: 'markiere Service-Proj.'},
+            show_projectname: {type: 'bool',    label: 'zeige Projektname'},
             quick_search    : {type: 'bool',    label: 'Schnellsuche'},
-            folding_option  : {type: 'bool',    label: 'Folding'}
+            quick_actions   : {type: 'bool',    label: 'Quick-Actions'}
         };
 
         var basic_setup = {
@@ -42,8 +44,10 @@
             color_day0: '',
             color_over: '',
             old_issue_view: 1,
+            warn_ups: 1,
+            show_projectname: 1,
             quick_search: 1,
-            folding_option: 1
+            quick_actions: 1
         };
     }
 
@@ -169,6 +173,20 @@
     }
 
     /**
+     * update gadgets height and width
+     *
+     * The trick is: minimize and maximize #page-body to force the gadget-update-method (of JIRA)
+     */
+    function updateGadgets() {
+        setStylesOnElement(document.querySelector('#page-body'), {width: '0px', minWidth: 'inherit'});
+        window.setTimeout(function() { // little bit delay before change styles again
+            setStylesOnElement(document.querySelector('#page-body'), {width: 'auto', minWidth: 'fit-content'});
+        }, 1);
+    }
+
+    // =============== config dialog ===============
+
+    /**
      * save config to loacal storage
      *
      * @param cfg
@@ -206,8 +224,6 @@
         return success;
     }
 
-    // ===============  functions ==================
-
     function initSetupDialog() {
         var nav = document.querySelector('#navigation-app');
         var div = document.createElement('DIV');
@@ -233,8 +249,10 @@
         var elem = document.querySelector('#my-jira-cfg-settings');
         if (elem.className.indexOf(' open') == -1) {
             elem.className += ' open';
+            hideQuickActions();
         } else {
             elem.className = elem.className.replace(' open', '');
+            showQuickActions();
         }
     }
 
@@ -246,13 +264,13 @@
         var clicked = e.target;
         // enable selected nav item
         document.querySelectorAll('#my-jira-cfg-menu span').forEach(function(elem) { // dis-active all nav-items
-                elem.className = elem.className.replace(' active', '');
+            elem.className = elem.className.replace(' active', '');
         });
         clicked.className += ' active';
 
         // enable selected section
         document.querySelectorAll('#my-jira-cfg-settings fieldset').forEach(function(elem) {   // dis-active all sections
-           elem.className = elem.className.replace(' active', '');
+            elem.className = elem.className.replace(' active', '');
         });
         // select corresponding elem for clicked element (i.e. #goto-abc-xyz -> #abc-xyz)
         document.querySelector('#' + clicked.id.replace('goto-', '')).className += ' active';
@@ -339,6 +357,7 @@
             if (sec) {
                 createCfgOption('folding_option', sec);
                 createCfgOption('quick_search', sec);
+                createCfgOption('warn_ups', sec);
             }
             sec = document.querySelector('#my-jira-cfg-tasks .inner');
             if (sec) {
@@ -348,6 +367,7 @@
                 createCfgOption('color_day1', sec);
                 createCfgOption('color_day2', sec);
                 createCfgOption('old_issue_view', sec);
+                createCfgOption('show_project', sec);
             }
             sec = document.querySelector('#my-jira-cfg-misc .inner');
             if (sec) {
@@ -388,96 +408,19 @@
         }
     }
 
-    /**
-     * mark special projects (i.e. Update Service)
-     */
-    function markSpecialProjects() {
-        // add project title to task view
-        var proj_title = document.querySelector('.css-6p2euf');
-        if (show_full_proj_title && proj_title) {
-            var bc = document.querySelector('.aui-nav-breadcrumbs');
-            if (bc) {
-                bc.prepend(proj_title.innerText + ' : ')
-            }
-        }
-
-        // mark service projects with color
-        if (mark_service_proj) {
-            var projects = document.querySelectorAll("td.project a");
-            if (projects.length) {
-                for (var idx=0; idx<projects.length; idx++) {
-                    var prj = projects[idx];
-                    if (prj.innerText.endsWith('Support Service')) {
-                        prj.style.color = '#f00 !important';
-                    }
-                }
-            }
-        }
-    }
+    // ================ quick actions ==============
 
     /**
-     * mark tasks by deadline distance (+ 2, + 1, today, overflowed)
+     * wait until sidebar logo exists and then add the quick-actions
      */
-    function markTasksByDeadline() {
-        var days_1      = 24 * (60 * 60 * 1000);
-        var days_2      = days_1 * 2;
-        var days_3      = days_1 * 3;
-        var tmp         = new Date().toDateString().split(' ');
-        var today       = new Date([tmp[2], tmp[1], tmp[3]].join('/'));
-        var tasks       = document.querySelectorAll('td.duedate');
-        tasks.forEach(
-            function (td) {
-                var status = td.parentNode.querySelector('td.status');
-                if (status) {
-                    status = status.innerText.toLowerCase();
-                } else {    // Fallback if td.status doesnt exists
-                    status = 'offen';
-                }
-                if (done_stati.indexOf(status) == -1) {     // status not in done_stati
-                    var t_diff  = new Date(td.innerText.trim()) - today;
-                    var css     = '';
-                    if (t_diff < days_1) {
-                        // überlaufen
-                        css = ' overrun';
+    function waitForSidebar() {
+        var logo_box = document.querySelector('.css-79elbk');
+        if (logo_box) {
+            window.clearInterval(watcher2);
+            addQuickActions();
 
-                    } else if (t_diff >= days_1 && t_diff < days_2) {
-                        css = ' todo-days-1';
-                    } else if (t_diff >= days_2 && t_diff < days_3 ) {
-                        css = ' todo-days-2';
-                    }
-                    td.closest('tr').className += css;
-                }
-            }
-        );
-    }
-
-    /**
-     * update gadgets height and width
-     *
-     * The trick is: minimize and maximize #page-body to force the gadget-update-method (of JIRA)
-     */
-    function updateGadgets() {
-        setStylesOnElement(document.querySelector('#page-body'), {width: '0px', minWidth: 'inherit'});
-        window.setTimeout(function() { // little bit delay before change styles again
-            setStylesOnElement(document.querySelector('#page-body'), {width: 'auto', minWidth: 'fit-content'});
-        }, 1);
-    }
-
-    /**
-     * looking for link to old issue view and use them
-     */
-    function useAlwaysOldIssueView() {
-        var a = document.querySelector("a[href*='?oldIssueView=true']");
-        if (a) {
-            window.clearInterval(watcher1);
-            window.stop();
-            if (!document.querySelector('#wait-for-loading')) {
-                var blur = document.createElement('IMG');
-                blur.src = 'https://meinesachsenzeit.de/szapp/images/loading.gif';
-                blur.id = 'wait-for-loading';
-                document.querySelector('#jira-frontend').append(blur);
-                a.click();
-            }
+        } else {
+            // do nothing beacause it will be called again via interval
         }
     }
 
@@ -576,124 +519,24 @@
      * add quick-actions to the dashboard
      */
     function addDashboardQuickActions() {
-        var dashboard = document.querySelector('#dashboard-content');
-        if (dashboard) {
-            // create actions
-            var html = '' +
-                '<h6>Actions</h6>' +
-                '<div class="row">' +
-                '<button id="widgets-collapse" data-callback="widgetsCollapseAll" class="action">collapse</button><button id="widgets-expand" data-callback="widgetsExpandAll" class="action">expand</button>' +
-                '</div>';
-            var div         = document.createElement('DIV');
-            div.id          = 'my-jira-dashboard-actions';
-            div.innerHTML   = html.trim();
-            // add new actions to the document
-            document.querySelector('#my-jira-quick-actions').appendChild(div);
-            // bind actions
-            document.querySelector('#my-jira-dashboard-actions #widgets-collapse').addEventListener('click', widgetsCollapseAll);
-            document.querySelector('#my-jira-dashboard-actions #widgets-expand').addEventListener('click', widgetsExpandAll);
-        }
-    }
-
-    /**
-     * add quick search field to instant-filtering
-     */
-    function addQuickSearch() {
-        var quick_actions   = document.querySelector('#my-jira-quick-actions');
-        var dashboard       = document.querySelector('#dashboard-content');
-        var navigator       = document.querySelector('#content .navigator-body');
-        if (quick_actions && (dashboard || navigator)) {
-            var search = document.createElement('INPUT');
-            var clean  = document.createElement('SPAN');
-            search.id  = 'quick-search-field';
-            clean.id   = 'quick-search-clear';
-            quick_actions.appendChild(search);
-            quick_actions.appendChild(clean);
-            updateQuickActions();
-
-            search.addEventListener('keyup',
-                function (e) {
-                    var field = e.target;
-                    var word = field.value.toLowerCase();
-                    if (word && word.length >= 3) { // search if 4 or more chars given
-                        // filter view
-                        field.className = field.className.replace(' filtering', '') + ' filtering';
-                        // expand all gadgets
-                        widgetsExpandAll();
-                        // filter gadgets
-                        var gadgets = document.querySelectorAll('div.gadget, #issuetable');
-                        gadgets.forEach(
-                            function (widget) {
-                                var rows = widget.querySelectorAll('tbody tr');
-                                rows.forEach(
-                                    function (tr) {
-                                        if (tr.innerText.toLowerCase().indexOf(word) == -1) {
-                                            // invisible the tr
-                                            tr.className = tr.className.replace('tr-off', '') + ' tr-off';
-                                        } else {
-                                            tr.className = tr.className.replace('tr-off', '');
-                                        }
-                                    }
-                                )
-                                // resize widgets
-                                if (widget.tagName == 'DIV') {  // skip tables
-                                    var results = widget.querySelector('div.results-wrap');
-                                    var inline = widget.querySelector('.gadget-inline');
-                                    if (results) {
-                                        if (widget.className.indexOf(' resized') == -1) {
-                                            widget.dataset.origHeight = inline.style.height;
-                                            widget.clsssName += ' resized';
-                                        }
-                                        inline.style.height = results.style.height;
-                                    }
-                                }
-                            }
-                        )
-                        updateGadgets();
-
-                    } else {
-                        // show all rows
-                        field.className = field.className.replace(' filtering', '');
-                        document.querySelectorAll('.gadget tr.tr-off, #issuetable tr.tr-off').forEach(
-                            function (tr) {
-                                tr.className = tr.className.replace('tr-off', '');
-                            }
-                        )
-                        // de-resize widgets
-                        updateGadgets();
-                        if (0) {
-                            var gadgets = document.querySelectorAll('div.gadget.resized');
-                            gadgets.forEach(
-                                function (widget) {
-                                    // resize widgets
-                                    var results = widget.querySelector('div.results-wrap');
-                                    var inline = widget.querySelector('.gadget-inline');
-                                    if (results) {
-                                        inline.style.height = widget.dataset.origHeight;
-                                        widget.clsssName = widget.className.replace(' resized', '');
-                                    }
-
-                                }
-                            );
-                        }
-
-                    }
-                }
-            );
-            clean.addEventListener('click',
-                function (e) {
-                    // clear quick-search-field and disable filtering
-                    var field = document.querySelector('#quick-search-field');
-                    field.value = '';
-                    field.className = field.className.replace(' filtering', '');
-                    document.querySelectorAll('.gadget tr.tr-off, #issuetable tr.tr-off').forEach(
-                        function (tr) {
-                            tr.className = tr.className.replace('tr-off', '');
-                        }
-                    );
-                    updateGadgets();
-                }
-            );
+        if (cfg.quick_actions) {
+            var dashboard = document.querySelector('#dashboard-content');
+            if (dashboard) {
+                // create actions
+                var html = '' +
+                    '<h6>Actions</h6>' +
+                    '<div class="row">' +
+                    '<button id="widgets-collapse" data-callback="widgetsCollapseAll" class="action">collapse</button><button id="widgets-expand" data-callback="widgetsExpandAll" class="action">expand</button>' +
+                    '</div>';
+                var div = document.createElement('DIV');
+                div.id = 'my-jira-dashboard-actions';
+                div.innerHTML = html.trim();
+                // add new actions to the document
+                document.querySelector('#my-jira-quick-actions').appendChild(div);
+                // bind actions
+                document.querySelector('#my-jira-dashboard-actions #widgets-collapse').addEventListener('click', widgetsCollapseAll);
+                document.querySelector('#my-jira-dashboard-actions #widgets-expand').addEventListener('click', widgetsExpandAll);
+            }
         }
     }
 
@@ -722,17 +565,204 @@
         updateGadgets();
     }
 
-    /**
-     * wait until sidebar logo exists and then add the quick-actions
-     */
-    function waitForSidebar() {
-        var logo_box = document.querySelector('.css-79elbk');
-        if (logo_box) {
-            window.clearInterval(watcher2);
-            addQuickActions();
+    // ===============  functions ==================
 
-        } else {
-            // do nothing beacause it will be called again via interval
+    /**
+     * mark special projects (i.e. Update Service)
+     */
+    function markSpecialProjects() {
+        if (cfg.warn_ups) {
+            // mark service projects with color
+            if (mark_service_proj) {
+                var projects = document.querySelectorAll("td.project a");
+                if (projects.length) {
+                    for (var idx = 0; idx < projects.length; idx++) {
+                        var prj = projects[idx];
+                        if (prj.innerText.endsWith('Support Service')) {
+                            prj.style.color = '#f00 !important';
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * add project name on task view
+     *
+     */
+    function addProjektNameInTaskView() {
+        if (cfg.show_projectname) {
+            // add project title to task view
+            var proj_title = document.querySelector('.css-6p2euf');
+            if (show_full_proj_title && proj_title) {
+                var bc = document.querySelector('.aui-nav-breadcrumbs');
+                if (bc) {
+                    bc.prepend(proj_title.innerText + ' : ')
+                }
+            }
+        }
+    }
+
+    /**
+     * mark tasks by deadline distance (+ 2, + 1, today, overflowed)
+     */
+    function markTasksByDeadline() {
+        if (cfg.colored_tasks) {
+            var days_1 = 24 * (60 * 60 * 1000);
+            var days_2 = days_1 * 2;
+            var days_3 = days_1 * 3;
+            var tmp = new Date().toDateString().split(' ');
+            var today = new Date([tmp[2], tmp[1], tmp[3]].join('/'));
+            var tasks = document.querySelectorAll('td.duedate');
+            tasks.forEach(
+                function (td) {
+                    var status = td.parentNode.querySelector('td.status');
+                    if (status) {
+                        status = status.innerText.toLowerCase();
+                    } else {    // Fallback if td.status doesnt exists
+                        status = 'offen';
+                    }
+                    if (done_stati.indexOf(status) == -1) {     // status not in done_stati
+                        var t_diff = new Date(td.innerText.trim()) - today;
+                        var css = '';
+                        if (t_diff < days_1) {
+                            // überlaufen
+                            css = ' overrun';
+
+                        } else if (t_diff >= days_1 && t_diff < days_2) {
+                            css = ' todo-days-1';
+                        } else if (t_diff >= days_2 && t_diff < days_3) {
+                            css = ' todo-days-2';
+                        }
+                        td.closest('tr').className += css;
+                    }
+                }
+            );
+        }
+    }
+
+    /**
+     * looking for link to old issue view and use them
+     */
+    function useAlwaysOldIssueView() {
+        if (cfg.old_issue_view) {
+            var a = document.querySelector("a[href*='?oldIssueView=true']");
+            if (a) {
+                window.clearInterval(watcher1);
+                window.stop();
+                if (!document.querySelector('#wait-for-loading')) {
+                    var blur = document.createElement('IMG');
+                    blur.src = 'https://meinesachsenzeit.de/szapp/images/loading.gif';
+                    blur.id = 'wait-for-loading';
+                    document.querySelector('#jira-frontend').append(blur);
+                    a.click();
+                }
+            }
+        }
+    }
+
+    /**
+     * add quick search field to instant-filtering
+     */
+    function addQuickSearch() {
+        if (cfg.quick_search) {
+            var quick_actions = document.querySelector('#my-jira-quick-actions');
+            var dashboard = document.querySelector('#dashboard-content');
+            var navigator = document.querySelector('#content .navigator-body');
+            if (quick_actions && (dashboard || navigator)) {
+                var search = document.createElement('INPUT');
+                var clean = document.createElement('SPAN');
+                search.id = 'quick-search-field';
+                clean.id = 'quick-search-clear';
+                quick_actions.appendChild(search);
+                quick_actions.appendChild(clean);
+                updateQuickActions();
+
+                search.addEventListener('keyup',
+                    function (e) {
+                        var field = e.target;
+                        var word = field.value.toLowerCase();
+                        if (word && word.length >= 3) { // search if 4 or more chars given
+                            // filter view
+                            field.className = field.className.replace(' filtering', '') + ' filtering';
+                            // expand all gadgets
+                            widgetsExpandAll();
+                            // filter gadgets
+                            var gadgets = document.querySelectorAll('div.gadget, #issuetable');
+                            gadgets.forEach(
+                                function (widget) {
+                                    var rows = widget.querySelectorAll('tbody tr');
+                                    rows.forEach(
+                                        function (tr) {
+                                            if (tr.innerText.toLowerCase().indexOf(word) == -1) {
+                                                // invisible the tr
+                                                tr.className = tr.className.replace('tr-off', '') + ' tr-off';
+                                            } else {
+                                                tr.className = tr.className.replace('tr-off', '');
+                                            }
+                                        }
+                                    )
+                                    // resize widgets
+                                    if (widget.tagName == 'DIV') {  // skip tables
+                                        var results = widget.querySelector('div.results-wrap');
+                                        var inline = widget.querySelector('.gadget-inline');
+                                        if (results) {
+                                            if (widget.className.indexOf(' resized') == -1) {
+                                                widget.dataset.origHeight = inline.style.height;
+                                                widget.clsssName += ' resized';
+                                            }
+                                            inline.style.height = results.style.height;
+                                        }
+                                    }
+                                }
+                            )
+                            updateGadgets();
+
+                        } else {
+                            // show all rows
+                            field.className = field.className.replace(' filtering', '');
+                            document.querySelectorAll('.gadget tr.tr-off, #issuetable tr.tr-off').forEach(
+                                function (tr) {
+                                    tr.className = tr.className.replace('tr-off', '');
+                                }
+                            )
+                            // de-resize widgets
+                            updateGadgets();
+                            if (0) {
+                                var gadgets = document.querySelectorAll('div.gadget.resized');
+                                gadgets.forEach(
+                                    function (widget) {
+                                        // resize widgets
+                                        var results = widget.querySelector('div.results-wrap');
+                                        var inline = widget.querySelector('.gadget-inline');
+                                        if (results) {
+                                            inline.style.height = widget.dataset.origHeight;
+                                            widget.clsssName = widget.className.replace(' resized', '');
+                                        }
+
+                                    }
+                                );
+                            }
+
+                        }
+                    }
+                );
+                clean.addEventListener('click',
+                    function (e) {
+                        // clear quick-search-field and disable filtering
+                        var field = document.querySelector('#quick-search-field');
+                        field.value = '';
+                        field.className = field.className.replace(' filtering', '');
+                        document.querySelectorAll('.gadget tr.tr-off, #issuetable tr.tr-off').forEach(
+                            function (tr) {
+                                tr.className = tr.className.replace('tr-off', '');
+                            }
+                        );
+                        updateGadgets();
+                    }
+                );
+            }
         }
     }
 
@@ -751,6 +781,7 @@
         watcher2 = window.setInterval(waitForSidebar, 100);
         markTasksByDeadline();
         markSpecialProjects();
+        addProjektNameInTaskView();
     }
 
     // ---  instant (DOM Ready)   ---

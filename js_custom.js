@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         jira-custom-modification
 // @namespace    http://tampermonkey.net/
-// @version      0.4.5b
+// @version      0.4.6b
 // @description  add some additional features for JIRA
 // @author       T. Hinze
 // @match        https://positivmultimedia.atlassian.net/*
@@ -528,7 +528,7 @@
      * add quick-actions to the dashboard
      */
     function addDashboardQuickActions() {
-        if (cfg.quick_actions) {
+        if (cfg && cfg.quick_actions) {
             var dashboard = document.querySelector('#dashboard-content');
             if (dashboard) {
                 // create actions
@@ -578,7 +578,7 @@
      * add quick search field to instant-filtering
      */
     function addQuickSearch() {
-        if (cfg.quick_search) {
+        if (cfg && cfg.quick_search) {
             var quick_actions = document.querySelector('#my-jira-quick-actions');
             var dashboard = document.querySelector('#dashboard-content');
             var navigator = document.querySelector('#content .navigator-body');
@@ -684,7 +684,7 @@
      * mark special projects (i.e. Update Service)
      */
     function markSpecialProjects() {
-        if (cfg.warn_ups) {
+        if (cfg && cfg.warn_ups) {
             // replace older ups styles
             var styles = document.querySelector('#ups-styles');
             if (styles) {
@@ -713,7 +713,7 @@
      *
      */
     function addProjektNameInTaskView() {
-        if (cfg.show_projectname) {
+        if (cfg && cfg.show_projectname) {
             // add project title to task view
             var proj_title = document.querySelector('.css-6p2euf');
             if (show_full_proj_title && proj_title) {
@@ -729,7 +729,7 @@
      * mark tasks by deadline distance (+ 2, + 1, today, overflowed)
      */
     function markTasksByDeadline() {
-        if (cfg.colored_tasks) {
+        if (cfg && cfg.colored_tasks) {
             // replace older styles
             var styles = document.querySelector('#colored-tasks');
             if (styles) {
@@ -784,7 +784,7 @@
      * looking for link to old issue view and use them
      */
     function useAlwaysOldIssueView() {
-        if (cfg.old_issue_view) {
+        if (cfg && cfg.old_issue_view) {
             var a = document.querySelector("a[href*='?oldIssueView=true']");
             if (a) {
                 window.clearInterval(watcher1);
@@ -806,17 +806,17 @@
     function pageLoadFinish() {
         window.clearInterval(watcher1); // remove watcher for old-issue-view-link
         initSetupDialog();
+        watcher1 = window.setInterval(useAlwaysOldIssueView, 100);
+        watcher2 = window.setInterval(waitForSidebar, 100);
+        markTasksByDeadline();
+        markSpecialProjects();
+        addProjektNameInTaskView();
     }
 
     // ---  init script ---
     function startScript() {
         loadConfig();
         insertCss(css);
-        watcher1 = window.setInterval(useAlwaysOldIssueView, 100);
-        watcher2 = window.setInterval(waitForSidebar, 100);
-        markTasksByDeadline();
-        markSpecialProjects();
-        addProjektNameInTaskView();
     }
 
     // ---  instant (DOM Ready)   ---

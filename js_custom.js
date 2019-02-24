@@ -69,7 +69,6 @@
             '<span id="goto-my-jira-cfg-dashbaord" class=" active">Dashboard</span>' +
             '<span id="goto-my-jira-cfg-tasks">Tasks</span>' +
             '<span id="goto-my-jira-cfg-misc">Misc</span>' +
-            // '<button id="my-jira-cfg-save">save</button>' +
             '</nav>' +
             '<fieldset id="my-jira-cfg-dashbaord" class="cfg-section active"><div class="inner"><h3>Dashboard-Setting</h3></div></fieldset>' +
             '<fieldset id="my-jira-cfg-tasks" class="cfg-section"><div class="inner"><h3>Tasks Settings</h3></div></fieldset>' +
@@ -254,7 +253,6 @@
             });
             buildCfgOptions();
             updateCfgSections();
-            // document.querySelector('#my-jira-cfg-save').addEventListener('click', saveCfgSettings);
         }
     }
 
@@ -391,7 +389,7 @@
                 // add fields here
                 document.querySelector('#my-jira-cfg-help').addEventListener('click',
                     function() {
-                        openNewTab('https://github.com/thinze/jira-custom-modification/blob/dev/HELP.md');
+                        openNewTab('https://github.com/thinze/jira-custom-modification/blob/master/HELP.md');
                     }
                 );
             }

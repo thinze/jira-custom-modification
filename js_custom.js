@@ -6,7 +6,7 @@
 // @author       T. Hinze
 // @match        https://positivmultimedia.atlassian.net/*
 // @grant        none
-// @update       https://gitlab.com/positivmultimedia/jira-custom-modification/raw/master/js_custom.js
+// @update       https://raw.githubusercontent.com/thinze/jira-custom-modification/master/js_custom.js
 // ==/UserScript==
 
 (function() {

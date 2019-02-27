@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         jira-custom-modification
 // @namespace    http://tampermonkey.net/
-// @version      0.4.7
+// @version      0.4.8
 // @description  add some additional features for JIRA
 // @author       T. Hinze
 // @match        https://positivmultimedia.atlassian.net/*
@@ -815,7 +815,13 @@
      * exec some tasks after the page has loading finished
      */
     function pageLoadFinish() {
-        window.clearInterval(watcher1); // remove watcher for old-issue-view-link
+        window.setTimeout(startScript, 500);
+    }
+
+    // ---  init script ---
+    function startScript() {
+        loadConfig();
+        insertCss(css);
         initSetupDialog();
         watcher1 = window.setInterval(useAlwaysOldIssueView, 100);
         watcher2 = window.setInterval(waitForSidebar, 100);
@@ -824,14 +830,7 @@
         addProjektNameInTaskView();
     }
 
-    // ---  init script ---
-    function startScript() {
-        loadConfig();
-        insertCss(css);
-    }
-
     // ---  instant (DOM Ready)   ---
-    window.setTimeout(startScript, 1000);
 
     // ---  window loaded  ---
     window.addEventListener("load", function(event) {

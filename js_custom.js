@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         jira-custom-modification
 // @namespace    http://tampermonkey.net/
-// @version      0.4.8
+// @version      0.4.9
 // @description  add some additional features for JIRA
 // @author       T. Hinze
 // @match        https://positivmultimedia.atlassian.net/*
@@ -382,7 +382,7 @@
                 createCfgOption('color_day1', sec);
                 createCfgOption('color_day2', sec);
                 createCfgOption('old_issue_view', sec);
-                createCfgOption('show_project', sec);
+                createCfgOption('show_projectname', sec);
             }
             sec = document.querySelector('#my-jira-cfg-misc .inner');
             if (sec) {

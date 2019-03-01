@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         jira-custom-modification
 // @namespace    http://tampermonkey.net/
-// @version      0.4.11
+// @version      0.4.12
 // @description  add some additional features for JIRA
 // @author       T. Hinze
 // @match        https://positivmultimedia.atlassian.net/*
@@ -815,7 +815,7 @@
                 window.stop();
                 if (!document.querySelector('#wait-for-loading')) {
                     var div = document.createElement('DIV');
-                    di.id = 'wait-for-loading';
+                    div.id = 'wait-for-loading';
                     div.innerHTML = spinner.trim();
                     document.querySelector('#jira-frontend').append(div);
                     a.click();

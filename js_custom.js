@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         jira-custom-modification
 // @namespace    http://tampermonkey.net/
-// @version      0.4.12
+// @version      0.4.20
 // @description  add some additional features for JIRA
 // @author       T. Hinze
 // @match        https://positivmultimedia.atlassian.net/*
@@ -751,6 +751,29 @@
     }
 
     /**
+     * search for link to tasks/issues and add old-view-param
+     *
+     */
+    function modifyIssueLinks() {
+        if (cfg && cfg.old_issue_view) {
+            var task_links = document.querySelectorAll('a.issue-link');
+            if (task_links.length) {
+                task_links.forEach(
+                    function (a) {
+                        if (a.href.indexOf('oldIssueView=true') == -1) {
+                            if (a.href.indexOf('?') == -1) {
+                                a.href += '?oldIssueView=true';
+                            } else {
+                                a.href += '&oldIssueView=true';
+                            }
+                        }
+                    }
+                )
+            }
+        }
+    }
+
+    /**
      * mark tasks by deadline distance (+ 2, + 1, today, overflowed)
      */
     function markTasksByDeadline() {
@@ -838,6 +861,7 @@
         initSetupDialog();
         watcher1 = window.setInterval(useAlwaysOldIssueView, 100);
         watcher2 = window.setInterval(waitForSidebar, 100);
+        modifyIssueLinks();
         markTasksByDeadline();
         markSpecialProjects();
         addProjektNameInTaskView();

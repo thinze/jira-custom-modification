@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         jira-custom-modification
 // @namespace    http://tampermonkey.net/
-// @version      0.4.9
+// @version      0.4.10
 // @description  add some additional features for JIRA
 // @author       T. Hinze
 // @match        https://positivmultimedia.atlassian.net/*
@@ -74,6 +74,8 @@
             '<fieldset id="my-jira-cfg-tasks" class="cfg-section"><div class="inner"><h3>Tasks Settings</h3></div></fieldset>' +
             '<fieldset id="my-jira-cfg-misc" class="cfg-section"><div class="inner"><h3>Misc Settings</h3></div><button id="my-jira-cfg-help">Help</button></fieldset>' +
             '</div>';
+
+        var spinner = '<div class="jira-page-loading-indicator my-jira-spiner"></div>';
     }
 
     // --- stylesheets ---
@@ -132,7 +134,6 @@
             '        height: 1em; background: darkred; margin-left: 1em; z-index: 99998; padding: 3px; } ' +
             '#quick-search-clear:hover { cursor: pointer; } ' +
             '#issuetable tr.tr-off, .gadget tr.tr-off { display: none !important; } ' +
-            '#wait-for-loading { position: absolute; z-index: 99999; width: 250px; height: auto; top: 30%; left: 50%; transform: translate(-50%, -50%); filter: blur(0); opacity: 0.8; }' +
             '';
     }
 
@@ -801,10 +802,10 @@
                 window.clearInterval(watcher1);
                 window.stop();
                 if (!document.querySelector('#wait-for-loading')) {
-                    var blur = document.createElement('IMG');
-                    blur.src = 'https://meinesachsenzeit.de/szapp/images/loading.gif';
-                    blur.id = 'wait-for-loading';
-                    document.querySelector('#jira-frontend').append(blur);
+                    var div = document.createElement('DIV');
+                    di.id = 'wait-for-loading';
+                    div.innerHTML = spinner.trim();
+                    document.querySelector('#jira-frontend').append(div);
                     a.click();
                 }
             }

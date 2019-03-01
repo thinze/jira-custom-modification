@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         jira-custom-modification
 // @namespace    http://tampermonkey.net/
-// @version      0.4.10
+// @version      0.4.11
 // @description  add some additional features for JIRA
 // @author       T. Hinze
 // @match        https://positivmultimedia.atlassian.net/*
@@ -148,6 +148,19 @@
             var now = [d.getHours(), d.getMinutes(), d.getSeconds(), d.getMilliseconds()].join(':');
             console.log(now + ': ' + txt);
         }
+    }
+
+    /**
+     * change german month shortnames to english representation
+     *
+     * @param txt
+     * @returns {Date}
+     */
+    function getStandardDate(txt) {
+        txt = txt.trim();
+        // replace german month shortnames with english ones
+        txt = txt.replace('Mär', 'Mar').replace('Mai', 'May').replace('Okt', 'Oct').replace('Dez', 'Dec');
+        return new Date(txt);
     }
 
     /**
@@ -764,17 +777,16 @@
             var tasks = document.querySelectorAll('td.duedate');
             tasks.forEach(
                 function (td) {
+                    var task = td.parentNode.querySelector('td.summary');
                     var status = td.parentNode.querySelector('td.status');
                     if (status) {
                         status = status.innerText.toLowerCase();
                     } else {    // Fallback if td.status doesnt exists
                         status = 'offen';
                     }
-                    if (td.innerText.trim() == '26/Feb/19') {
-                        var a = 1;
-                    }
                     if (done_stati.indexOf(status) == -1) {     // status not in done_stati
-                        var t_diff = new Date(td.innerText.trim()) - today;
+                        var due_date = getStandardDate(td.innerText);
+                        var t_diff = new Date(due_date) - today;
                         var elem_css = '';
                         if (t_diff < 0) {
                             elem_css = ' overrun';

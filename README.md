@@ -2,10 +2,15 @@
 Custom Javascript to add some features to the JIRA browser app.
 
 # Features
+**General**
+- add config dialog to setup options and colors
+
 **Dashboard**
 - add collapse/expand quick-actions
 - add quick-search field to filter gadget content
 - mark tasks by deadline
+- add old issue view mode to any task link
+- mark Service projects
 
 **Filters view**
 - add quick-search field to filter task list
@@ -44,5 +49,5 @@ Now call the DIM website to see if it works.
 [Call the JIRA App webpage to test](https://positivmultimedia.atlassian.net/secure/Dashboard.jspa)
 
 # Final
-Now, after any reload of DIM page, the script will be execute automatically.
+Now, after any reload of JIRA pages, the script will be execute automatically.
 

@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         jira-custom-modification
 // @namespace    http://tampermonkey.net/
-// @version      0.4.20
+// @version      0.4.22
 // @description  add some additional features for JIRA
 // @author       T. Hinze
 // @match        https://positivmultimedia.atlassian.net/*
@@ -13,6 +13,7 @@
     'use strict';
 
     // --- settings ---
+    var js_version              = '0.4.22';
     var js_debug                = 1;
     var watcher1, watcher2;
 
@@ -36,21 +37,10 @@
             warn_ups        : {type: 'bool',    label: 'markiere Service-Proj.',val: 0},
             show_projectname: {type: 'bool',    label: 'zeige Projektname',     val: 0},
             quick_search    : {type: 'bool',    label: 'Schnellsuche',          val: 1},
-            quick_actions   : {type: 'bool',    label: 'Quick-Actions',         val: 1}
+            quick_actions   : {type: 'bool',    label: 'Quick-Actions',         val: 1},
+            version         : {type: 'readonly',label: 'Version',               val: '?'}
         };
 
-        var basic_setup = {
-            colored_tasks: 1,
-            color_day2: '',
-            color_day1: '',
-            color_day0: '',
-            color_over: '',
-            old_issue_view: 1,
-            warn_ups: 1,
-            show_projectname: 1,
-            quick_search: 1,
-            quick_actions: 1
-        };
     }
 
     // --- observer ---
@@ -312,11 +302,11 @@
     function createCfgOption(property, container) {
         if (container) {
             if (setup_options.hasOwnProperty(property)) {
-                var lbl = document.createElement('LABEL');
+                var lbl         = document.createElement('LABEL');
+                var elem        = document.createElement('INPUT');
                 lbl.htmlFor     = property;
                 lbl.innerHTML   = setup_options[property]['label'];
-                var elem = document.createElement('INPUT');
-                elem.id = 'cfg-' + property;
+                elem.id         = 'cfg-' + property;
                 switch (setup_options[property]['type']) {
                     case 'bool':
                         elem.type = 'checkbox';
@@ -332,6 +322,11 @@
                         elem.type = 'text';
                         elem.className = 'text';
                         elem.dataset.cfg_type = 'text';
+                        break;
+                    case 'readonly':
+                        elem = document.createElement('SPAN');
+                        elem.className = 'field-readonly';
+                        elem.innerText = js_version;
                         break;
                 }
                 elem.addEventListener('change', instantSaveCfgOption);
@@ -406,6 +401,7 @@
                         openNewTab('https://github.com/thinze/jira-custom-modification/blob/master/HELP.md');
                     }
                 );
+                createCfgOption('version', sec);
             }
         }
     }
@@ -751,29 +747,6 @@
     }
 
     /**
-     * search for link to tasks/issues and add old-view-param
-     *
-     */
-    function modifyIssueLinks() {
-        if (cfg && cfg.old_issue_view) {
-            var task_links = document.querySelectorAll('a.issue-link');
-            if (task_links.length) {
-                task_links.forEach(
-                    function (a) {
-                        if (a.href.indexOf('oldIssueView=true') == -1) {
-                            if (a.href.indexOf('?') == -1) {
-                                a.href += '?oldIssueView=true';
-                            } else {
-                                a.href += '&oldIssueView=true';
-                            }
-                        }
-                    }
-                )
-            }
-        }
-    }
-
-    /**
      * mark tasks by deadline distance (+ 2, + 1, today, overflowed)
      */
     function markTasksByDeadline() {
@@ -832,7 +805,8 @@
      */
     function useAlwaysOldIssueView() {
         if (cfg && cfg.old_issue_view) {
-            var a = document.querySelector("a[href*='?oldIssueView=true']");
+            // old view-mode link on issue view
+            var a = document.querySelector("#jira-frontend-content .gGZyaD a[href*='?oldIssueView=true']");
             if (a) {
                 window.clearInterval(watcher1);
                 window.stop();
@@ -840,7 +814,8 @@
                     var div = document.createElement('DIV');
                     div.id = 'wait-for-loading';
                     div.innerHTML = spinner.trim();
-                    document.querySelector('#jira-frontend').append(div);
+                    // document.querySelector('#jira-frontend').append(div);
+                    document.querySelector('body').append(div);
                     a.click();
                 }
             }
@@ -848,10 +823,26 @@
     }
 
     /**
-     * exec some tasks after the page has loading finished
+     * search for link to tasks/issues and add old-view-param
+     *
      */
-    function pageLoadFinish() {
-        window.setTimeout(startScript, 500);
+    function modifyIssueLinks() {
+        if (cfg && cfg.old_issue_view) {
+            var task_links = document.querySelectorAll('a.issue-link');
+            if (task_links.length) {
+                task_links.forEach(
+                    function (a) {
+                        if (a.href.indexOf('oldIssueView=true') == -1) {
+                            if (a.href.indexOf('?') == -1) {
+                                a.href += '?oldIssueView=true';
+                            } else {
+                                a.href += '&oldIssueView=true';
+                            }
+                        }
+                    }
+                )
+            }
+        }
     }
 
     // ---  init script ---
@@ -870,6 +861,14 @@
     // ---  instant (DOM Ready)   ---
 
     // ---  window loaded  ---
+
+    /**
+     * exec some tasks after the page has loading finished
+     */
+    function pageLoadFinish() {
+        window.setTimeout(startScript, 500);
+    }
+
     window.addEventListener("load", function(event) {
         pageLoadFinish();
     });

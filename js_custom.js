@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         jira-custom-modification
 // @namespace    http://tampermonkey.net/
-// @version      0.4.22
+// @version      0.4.23
 // @description  add some additional features for JIRA
 // @author       T. Hinze
 // @match        https://positivmultimedia.atlassian.net/*
@@ -13,7 +13,7 @@
     'use strict';
 
     // --- settings ---
-    var js_version              = '0.4.22';
+    var js_version              = '0.4.23';
     var js_debug                = 1;
     var watcher1, watcher2;
 
@@ -164,6 +164,20 @@
         }
         style.innerHTML = css;
         document.querySelector('head').appendChild(style);
+    }
+
+    /**
+     * replace old styles-element with new one
+     *
+     * @param css_id
+     * @param css
+     */
+    function updateCss(css, css_id) {
+        var styles = document.querySelector('#' + css_id);
+        if (styles) {
+            styles.parentNode.removeChild(styles);
+        }
+        insertCss(css, css_id);
     }
 
     /**
@@ -706,16 +720,11 @@
      */
     function markSpecialProjects() {
         if (cfg && cfg.warn_ups) {
-            // replace older ups styles
-            var styles = document.querySelector('#ups-styles');
-            if (styles) {
-                styles.parentNode.removeChild(styles);
-            }
             // add new ups styles
             var css = '' +
                 '.project a.special-prj { color: ' + cfg.color_ups + '!important; } ' +
                 '';
-            insertCss(css, 'ups-styles');
+            updateCss(css, 'ups-styles');
             // mark service projects with color
             var projects = document.querySelectorAll("td.project a");
             if (projects.length) {
@@ -747,15 +756,10 @@
     }
 
     /**
-     * mark tasks by deadline distance (+ 2, + 1, today, overflowed)
+     * mark tasks with color by deadline distance (+ 2, + 1, today, overflowed)
      */
     function markTasksByDeadline() {
         if (cfg && cfg.colored_tasks) {
-            // replace older styles
-            var styles = document.querySelector('#colored-tasks');
-            if (styles) {
-                styles.parentNode.removeChild(styles);
-            }
             // build new task colors
             var css = '' +
                 '.overrun td, .overrun td a { color: ' + cfg.color_over + '!important; } ' +
@@ -763,7 +767,7 @@
                 '.todo-days-1 td, .todo-days-1 td a { color: ' + cfg.color_day1 + ' !important; } ' +
                 '.todo-days-2 td, .todo-days-2 td a { color: ' + cfg.color_day2 + ' !important; } ' +
                 '';
-            insertCss(css, 'colored-tasks');
+            updateCss(css, 'colored-tasks');
             // calc deadline distance
             var days_0 = 24 * (60 * 60 * 1000);
             var days_1 = days_0 * 2;
@@ -857,8 +861,6 @@
         markSpecialProjects();
         addProjektNameInTaskView();
     }
-
-    // ---  instant (DOM Ready)   ---
 
     // ---  window loaded  ---
 

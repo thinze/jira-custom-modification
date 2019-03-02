@@ -1,19 +1,19 @@
 // ==UserScript==
 // @name         jira-custom-modification
 // @namespace    http://tampermonkey.net/
-// @version      0.4.24
+// @version      0.4.4
 // @description  add some additional features for JIRA
 // @author       T. Hinze
 // @match        https://positivmultimedia.atlassian.net/*
 // @grant        none
-// @update       https://raw.githubusercontent.com/thinze/jira-custom-modification/master/js_custom.js?v=0-4-24
+// @update       https://raw.githubusercontent.com/thinze/jira-custom-modification/master/js_custom.js?v=0.4.4
 // ==/UserScript==
 
 (function() {
     'use strict';
 
     // --- settings ---
-    var js_version              = '0.4.24';
+    var js_version              = '0.4.4';
     var js_debug                = 1;
     var watcher1, watcher2;
 
@@ -27,18 +27,19 @@
     if (true) {
 
         var setup_options = {
-            colored_tasks   : {type: 'bool',    label: 'Tasks färben',          val: 1},
-            color_ups       : {type: 'color',   label: 'Service-Proj.',         val: 'red'},
-            color_day2      : {type: 'color',   label: 'in 2 Tagen',            val: 'lightblue'},
-            color_day1      : {type: 'color',   label: 'in 1 Tagen',            val: 'orange'},
-            color_day0      : {type: 'color',   label: 'heute',                 val: 'magenta'},
-            color_over      : {type: 'color',   label: 'überlaufen',            val: 'red'},
-            old_issue_view  : {type: 'bool',    label: 'alte Task-Ansicht',     val: 1},
-            warn_ups        : {type: 'bool',    label: 'markiere Service-Proj.',val: 0},
-            show_projectname: {type: 'bool',    label: 'zeige Projektname',     val: 0},
-            quick_search    : {type: 'bool',    label: 'Schnellsuche',          val: 1},
-            quick_actions   : {type: 'bool',    label: 'Quick-Actions',         val: 1},
-            version         : {type: 'readonly',label: 'Version',               val: '?'}
+            colored_tasks   : {type: 'bool',    label: 'Tasks färben',              val: 1},
+            warn_ups        : {type: 'bool',    label: 'markiere Service-Proj.',    val: 0},
+            color_ups_fg    : {type: 'color',   label: 'Service-Proj. Schriftfarbe',val: '#333333'},
+            color_ups_bg    : {type: 'color',   label: 'Service-Proj. Background',  val: '#ffff00'},
+            color_day2      : {type: 'color',   label: 'in 2 Tagen',                val: '#00bfff'},
+            color_day1      : {type: 'color',   label: 'in 1 Tagen',                val: '#ff9900'},
+            color_day0      : {type: 'color',   label: 'heute',                     val: '#cc33ff'},
+            color_over      : {type: 'color',   label: 'überlaufen',                val: '#ff0000'},
+            old_issue_view  : {type: 'bool',    label: 'alte Task-Ansicht',         val: 1},
+            show_projectname: {type: 'bool',    label: 'zeige Projektname',         val: 0},
+            quick_search    : {type: 'bool',    label: 'Schnellsuche',              val: 1},
+            quick_actions   : {type: 'bool',    label: 'Quick-Actions',             val: 1},
+            version         : {type: 'readonly',label: 'Version',                   val: '?'}
         };
 
     }
@@ -242,18 +243,27 @@
             }
             success = true;
             _debug('cfg loaded');
+            // checkup cfg
+            for (var property in setup_options) {
+                if (!data.hasOwnProperty(property)) { // property is missing
+                    // set property with default value
+                    data[property] = setup_options[property]['val'];
+                    _debug('add config option : ' + property);
+                }
+            }
+            _debug('cfg checked');
         }
         catch(err) {
             // stored cfg incorrect -> save and use default values
+            data = {};
             for (var property in setup_options) {
-                var val = setup_options[property]['val'];
-                cfg[property] = val;
+                data[property] = setup_options[property]['val'];
             }
-            saveConfig(cfg);
             success = false;
             _debug('cfg loading failed - use default settings');
         }
         cfg = data;
+        saveConfig(cfg);
         return success;
     }
 
@@ -395,7 +405,8 @@
                 createCfgOption('quick_actions', sec);
                 createCfgOption('quick_search', sec);
                 createCfgOption('warn_ups', sec);
-                createCfgOption('color_ups', sec);
+                createCfgOption('color_ups_fg', sec);
+                createCfgOption('color_ups_bg', sec);
             }
             sec = document.querySelector('#my-jira-cfg-tasks .inner');
             if (sec) {
@@ -722,7 +733,8 @@
         if (cfg && cfg.warn_ups) {
             // add new ups styles
             var css = '' +
-                '.project a.special-prj { color: ' + cfg.color_ups + '!important; } ' +
+                '.project.special { background-color: ' + cfg.color_ups_bg + ' !important; color: ' + cfg.color_ups_fg + ' !important; } ' +
+                '.project.special a { color: ' + cfg.color_ups_fg + ' !important; } ' +
                 '';
             updateCss(css, 'ups-styles');
             // mark service projects with color
@@ -730,8 +742,8 @@
             if (projects.length) {
                     for (var idx = 0; idx < projects.length; idx++) {
                         var prj = projects[idx];
-                        if (prj.innerText.endsWith('Support Service')) {
-                            prj.className = prj.className.replace(' special-prj', '') + ' special-proj';
+                        if (prj.innerText.endsWith('Support Service') || prj.innerText.endsWith('Support Service')) {
+                            prj.parentNode.className = prj.parentNode.className.replace(' special', '') + ' special';
                         }
                     }
                 }

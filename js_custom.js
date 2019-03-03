@@ -1,25 +1,21 @@
 // ==UserScript==
 // @name         jira-custom-modification
 // @namespace    http://tampermonkey.net/
-// @version      0.4.4
+// @version      0.4.41
 // @description  add some additional features for JIRA
 // @author       T. Hinze
 // @match        https://positivmultimedia.atlassian.net/*
 // @grant        none
-// @update       https://raw.githubusercontent.com/thinze/jira-custom-modification/master/js_custom.js?v=0.4.4
+// @update       https://raw.githubusercontent.com/thinze/jira-custom-modification/master/js_custom.js?v=0.4.41
 // ==/UserScript==
 
 (function() {
     'use strict';
 
     // --- settings ---
-    var js_version              = '0.4.4';
+    var js_version              = '0.4.41';
     var js_debug                = 1;
     var watcher1, watcher2;
-
-    // config
-    var show_full_proj_title    = 1;
-    var mark_service_proj	    = 1;
     var done_stati              = ['erledigt', 'geschlossen'];
 
     // --- config vars ---
@@ -234,14 +230,12 @@
      * load config from local storage
      */
     function loadConfig() {
-        var success = false;
         var data;
         try {
             data = JSON.parse(localStorage.getItem('my-jira-cfg'));
             if (data === null) {
                 throw "cfg loading error";
             }
-            success = true;
             _debug('cfg loaded');
             // checkup cfg
             for (var property in setup_options) {
@@ -259,12 +253,10 @@
             for (var property in setup_options) {
                 data[property] = setup_options[property]['val'];
             }
-            success = false;
             _debug('cfg loading failed - use default settings');
         }
         cfg = data;
         saveConfig(cfg);
-        return success;
     }
 
     function initSetupDialog() {
@@ -758,7 +750,7 @@
         if (cfg && cfg.show_projectname) {
             // add project title to task view
             var proj_title = document.querySelector('.css-6p2euf');
-            if (show_full_proj_title && proj_title) {
+            if (proj_title) {
                 var bc = document.querySelector('.aui-nav-breadcrumbs');
                 if (bc) {
                     bc.prepend(proj_title.innerText + ' : ')
@@ -863,8 +855,17 @@
 
     // ---  init script ---
     function startScript() {
-        loadConfig();
+        // verify loaded context, because sometimes page isnt complete loaded :-/
+        if (location.href.indexOf('/Dashboard.jspa') !== -1) {
+            // check for existing dashboard content
+            if (!document.querySelector('#dashboard-content .dashboard-shim')) {
+                _debug('reload page');
+                location.href = location.href;  // reload current page
+            }
+        }
+        //---
         insertCss(css);
+        loadConfig();
         initSetupDialog();
         watcher1 = window.setInterval(useAlwaysOldIssueView, 100);
         watcher2 = window.setInterval(waitForSidebar, 100);
@@ -879,12 +880,12 @@
     /**
      * exec some tasks after the page has loading finished
      */
-    function pageLoadFinish() {
+    function pageLoadFinish(e) {
+        window.removeEventListener('load', pageLoadFinish); // prevent multiple calls
         window.setTimeout(startScript, 500);
     }
 
-    window.addEventListener("load", function(event) {
-        pageLoadFinish();
-    });
+    // --- wait for window loaded event ---
+    window.addEventListener('load', pageLoadFinish, false, true); // use bubbling and be cancelable
 
 })();

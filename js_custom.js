@@ -14,7 +14,7 @@
 
     // --- settings ---
     var js_version              = '0.4.41';
-    var js_debug                = 1;
+    var js_debug                = 0;
     var watcher1, watcher2;
     var done_stati              = ['erledigt', 'geschlossen'];
 

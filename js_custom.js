@@ -1,19 +1,19 @@
 // ==UserScript==
 // @name         jira-custom-modification
 // @namespace    http://tampermonkey.net/
-// @version      0.4.41
+// @version      0.4.42
 // @description  add some additional features for JIRA
 // @author       T. Hinze
 // @match        https://positivmultimedia.atlassian.net/*
 // @grant        none
-// @update       https://raw.githubusercontent.com/thinze/jira-custom-modification/master/js_custom.js?v=0.4.41
+// @update       https://raw.githubusercontent.com/thinze/jira-custom-modification/master/js_custom.js?v=0.4.42
 // ==/UserScript==
 
 (function() {
     'use strict';
 
     // --- settings ---
-    var js_version              = '0.4.41';
+    var js_version              = '0.4.42';
     var js_debug                = 1;
     var watcher1, watcher2;
     var done_stati              = ['erledigt', 'geschlossen'];
@@ -490,6 +490,22 @@
         if (btn) {
             btn.addEventListener('click', toggleDashboardQuickActions);
         }
+        // toggle quick-actions if the search icon was clicked
+        var search = document.querySelector('#quickSearchGlobalItem');
+        if (search) {
+            search.addEventListener('click', function() {
+                hideQuickActions();
+                window.setTimeout(
+                    function () {
+                        var back = document.querySelector("button[data-test-selector='DrawerPrimitiveSidebarCloseButton']");
+                        if (back) {
+                            back.addEventListener('click', showQuickActions);
+                        }
+                    }, 500
+                );
+            });
+        }
+
 
         // init method to observe the sidebar resize
         sidebar_ro.observe(logo_box.parentNode);

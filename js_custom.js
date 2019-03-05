@@ -1,19 +1,19 @@
 // ==UserScript==
 // @name         jira-custom-modification
 // @namespace    http://tampermonkey.net/
-// @version      0.4.43
+// @version      0.4.44
 // @description  add some additional features for JIRA
 // @author       T. Hinze
 // @match        https://positivmultimedia.atlassian.net/*
 // @grant        none
-// @update       https://raw.githubusercontent.com/thinze/jira-custom-modification/master/js_custom.js?v=0.4.43
+// @update       https://raw.githubusercontent.com/thinze/jira-custom-modification/master/js_custom.js?v=0.4.44
 // ==/UserScript==
 
 (function() {
     'use strict';
 
     // --- settings ---
-    var js_version              = '0.4.43';
+    var js_version              = '0.4.44';
     var js_debug                = 1;
     var watcher1, watcher2;
     var done_stati              = ['erledigt', 'geschlossen'];
@@ -813,10 +813,10 @@
                 '.todo-days-0 td, .todo-days-0 td a { color: ' + cfg.color_day0 + ' !important; } ' +
                 '.todo-days-1 td, .todo-days-1 td a { color: ' + cfg.color_day1 + ' !important; } ' +
                 '.todo-days-2 td, .todo-days-2 td a { color: ' + cfg.color_day2 + ' !important; } ' +
-                '.overrun time { background-color: ' + cfg.color_over + ' !important; color: #fff !important; padding: 2px 5px; } ' +
-                '.todo-days-0 time { background-color: ' + cfg.color_day0 + ' !important; color: #fff !important; padding: 2px 5px; } ' +
-                '.todo-days-1 time { background-color: ' + cfg.color_day1 + ' !important; color: #fff !important; padding: 2px 5px; } ' +
-                '.todo-days-2 time { background-color: ' + cfg.color_day2 + ' !important; color: #fff !important; padding: 2px 5px; } ' +
+                '.overrun > time { background-color: ' + cfg.color_over + ' !important; color: #fff !important; padding: 2px 5px; } ' +
+                '.todo-days-0 > time { background-color: ' + cfg.color_day0 + ' !important; color: #fff !important; padding: 2px 5px; } ' +
+                '.todo-days-1 > time { background-color: ' + cfg.color_day1 + ' !important; color: #fff !important; padding: 2px 5px; } ' +
+                '.todo-days-2 > time { background-color: ' + cfg.color_day2 + ' !important; color: #fff !important; padding: 2px 5px; } ' +
                 '';
             updateCss(css, 'colored-tasks');
             // mark tasks in gadgets or other lists
@@ -925,5 +925,7 @@
 
     // --- wait for window loaded event ---
     window.addEventListener('load', pageLoadFinish, false, true); // use bubbling and be cancelable
+
+    //TODO: implement a custom watcher for loading finished
 
 })();

@@ -17,6 +17,7 @@ Custom Javascript to add some features to the JIRA browser app.
  
 **Task view**
 - if the link "use old issue view" is available, then autom. use it
+- add colored duedate
 
 -----
 

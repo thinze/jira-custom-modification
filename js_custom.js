@@ -1,20 +1,20 @@
 // ==UserScript==
 // @name         jira-custom-modification
 // @namespace    http://tampermonkey.net/
-// @version      0.4.42
+// @version      0.4.43
 // @description  add some additional features for JIRA
 // @author       T. Hinze
 // @match        https://positivmultimedia.atlassian.net/*
 // @grant        none
-// @update       https://raw.githubusercontent.com/thinze/jira-custom-modification/master/js_custom.js?v=0.4.42
+// @update       https://raw.githubusercontent.com/thinze/jira-custom-modification/master/js_custom.js?v=0.4.43
 // ==/UserScript==
 
 (function() {
     'use strict';
 
     // --- settings ---
-    var js_version              = '0.4.42';
-    var js_debug                = 0;
+    var js_version              = '0.4.43';
+    var js_debug                = 1;
     var watcher1, watcher2;
     var done_stati              = ['erledigt', 'geschlossen'];
 
@@ -43,10 +43,10 @@
     // --- observer ---
     var sidebar_ro =  new ResizeObserver( entries => {
         for (let entry of entries) {
-            var cr = entry.contentRect;
-            updateQuickSearch(entry.target);
-        }
-    });
+        var cr = entry.contentRect;
+        updateQuickSearch(entry.target);
+    }
+});
 
     // --- HTML snippets ---
     if (true) {
@@ -748,13 +748,13 @@
             // mark service projects with color
             var projects = document.querySelectorAll("td.project a");
             if (projects.length) {
-                    for (var idx = 0; idx < projects.length; idx++) {
-                        var prj = projects[idx];
-                        if (prj.innerText.endsWith('Support Service') || prj.innerText.endsWith('Support Service')) {
-                            prj.parentNode.className = prj.parentNode.className.replace(' special', '') + ' special';
-                        }
+                for (var idx = 0; idx < projects.length; idx++) {
+                    var prj = projects[idx];
+                    if (prj.innerText.endsWith('Support Service') || prj.innerText.endsWith('Support Service')) {
+                        prj.parentNode.className = prj.parentNode.className.replace(' special', '') + ' special';
                     }
                 }
+            }
         }
     }
 
@@ -776,51 +776,73 @@
     }
 
     /**
+     * return the CSS class for due-dates
+     *
+     * @param due_date
+     * @returns {string}
+     */
+    function getDuedateLabel(due_date) {
+        // calc deadline distance
+        let days_0  = 24 * (60 * 60 * 1000);
+        let days_1  = days_0 * 2;
+        let days_2  = days_0 * 3;
+        let tmp     = new Date().toDateString().split(' ');
+        let today   = new Date([tmp[2], tmp[1], tmp[3]].join('/'));
+        let t_diff  = new Date(due_date) - today;
+        let elem_css = '';
+        if (t_diff < 0) {
+            elem_css = ' overrun';
+        } else if (t_diff < days_0) {
+            elem_css = ' todo-days-0';  // deadline in 0 days
+        } else if (t_diff >= days_0 && t_diff < days_1) {
+            elem_css = ' todo-days-1'; // deadline in 1 day
+        } else if (t_diff >= days_1 && t_diff < days_2) {
+            elem_css = ' todo-days-2'; // deadline in 2 days
+        }
+        return elem_css
+    }
+
+    /**
      * mark tasks with color by deadline distance (+ 2, + 1, today, overflowed)
      */
     function markTasksByDeadline() {
         if (cfg && cfg.colored_tasks) {
             // build new task colors
-            var css = '' +
+            let css = '' +
                 '.overrun td, .overrun td a { color: ' + cfg.color_over + '!important; } ' +
                 '.todo-days-0 td, .todo-days-0 td a { color: ' + cfg.color_day0 + ' !important; } ' +
                 '.todo-days-1 td, .todo-days-1 td a { color: ' + cfg.color_day1 + ' !important; } ' +
                 '.todo-days-2 td, .todo-days-2 td a { color: ' + cfg.color_day2 + ' !important; } ' +
+                '.overrun time { background-color: ' + cfg.color_over + ' !important; color: #fff !important; padding: 2px 5px; } ' +
+                '.todo-days-0 time { background-color: ' + cfg.color_day0 + ' !important; color: #fff !important; padding: 2px 5px; } ' +
+                '.todo-days-1 time { background-color: ' + cfg.color_day1 + ' !important; color: #fff !important; padding: 2px 5px; } ' +
+                '.todo-days-2 time { background-color: ' + cfg.color_day2 + ' !important; color: #fff !important; padding: 2px 5px; } ' +
                 '';
             updateCss(css, 'colored-tasks');
-            // calc deadline distance
-            var days_0 = 24 * (60 * 60 * 1000);
-            var days_1 = days_0 * 2;
-            var days_2 = days_0 * 3;
-            var tmp = new Date().toDateString().split(' ');
-            var today = new Date([tmp[2], tmp[1], tmp[3]].join('/'));
-            var tasks = document.querySelectorAll('td.duedate');
+            // mark tasks in gadgets or other lists
+            let tasks   = document.querySelectorAll('td.duedate');
             tasks.forEach(
                 function (td) {
-                    var task = td.parentNode.querySelector('td.summary');
-                    var status = td.parentNode.querySelector('td.status');
+                    let status  = td.parentNode.querySelector('td.status');
                     if (status) {
                         status = status.innerText.toLowerCase();
                     } else {    // Fallback if td.status doesnt exists
                         status = 'offen';
                     }
                     if (done_stati.indexOf(status) == -1) {     // status not in done_stati
-                        var due_date = getStandardDate(td.innerText);
-                        var t_diff = new Date(due_date) - today;
-                        var elem_css = '';
-                        if (t_diff < 0) {
-                            elem_css = ' overrun';
-                        } else if (t_diff < days_0) {
-                            elem_css = ' todo-days-0';  // deadline in 0 days
-                        } else if (t_diff >= days_0 && t_diff < days_1) {
-                            elem_css = ' todo-days-1'; // deadline in 1 day
-                        } else if (t_diff >= days_1 && t_diff < days_2) {
-                            elem_css = ' todo-days-2'; // deadline in 2 days
-                        }
+                        let due_date = getStandardDate(td.innerText);
+                        let elem_css = getDuedateLabel(due_date);
                         td.closest('tr').className += elem_css;
                     }
                 }
             );
+            // mark duedates in task view
+            var task_duedate = document.querySelector('.issue-view #due-date');
+            if (task_duedate) {
+                let due_date = getStandardDate(task_duedate.innerText);
+                let elem_css = getDuedateLabel(due_date);
+                task_duedate.className += elem_css;
+            }
         }
     }
 

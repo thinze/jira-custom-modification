@@ -1,19 +1,19 @@
 // ==UserScript==
 // @name         jira-custom-modification
 // @namespace    http://tampermonkey.net/
-// @version      0.4.44
+// @version      0.4.45
 // @description  add some additional features for JIRA
 // @author       T. Hinze
 // @match        https://positivmultimedia.atlassian.net/*
 // @grant        none
-// @update       https://raw.githubusercontent.com/thinze/jira-custom-modification/master/js_custom.js?v=0.4.44
+// @update       https://raw.githubusercontent.com/thinze/jira-custom-modification/master/js_custom.js?v=0.4.45
 // ==/UserScript==
 
 (function() {
     'use strict';
 
     // --- settings ---
-    var js_version              = '0.4.44';
+    var js_version              = '0.4.45';
     var js_debug                = 1;
     var watcher1, watcher2;
     var done_stati              = ['erledigt', 'geschlossen'];
@@ -479,7 +479,7 @@
         container.id  = 'my-jira-quick-actions';
         document.querySelector('body').appendChild(container);
         // move sidebar downward
-        var logo_box = document.querySelector('.css-cm9zc8');
+        var logo_box = document.querySelector("div[data-test-id='ContextualNavigation'] > div > div > div");
         logo_box.className += ' my-jira-logobox';
         // add actions
         addDashboardQuickActions();
@@ -536,7 +536,8 @@
      */
     function updateQuickSearch(elem) {
         var qa = document.querySelector('#my-jira-quick-actions');
-        var sidebar = document.querySelector('.css-cm9zc8').parentNode;
+        var sidebar = document.querySelector("div[data-test-id='ContextualNavigation']");
+        var logo_box = sidebar.querySelector("div[data-test-id='ContextualNavigation'] > div > div");
         var search = document.querySelector('#quick-search-field');
         var clean = document.querySelector('#quick-search-clear');
         if (qa && search && clean) {

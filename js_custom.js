@@ -41,12 +41,13 @@
     }
 
     // --- observer ---
-    var sidebar_ro =  new ResizeObserver( entries => {
-        for (let entry of entries) {
-        var cr = entry.contentRect;
-        updateQuickSearch(entry.target);
-    }
-});
+    var sidebar_mo = new MutationObserver( function(mutations) {
+        mutations.forEach(function(mutation) {
+            if (mutation.attributeName == 'style') {
+                updateQuickSearch();
+            }
+        });
+    });
 
     // --- HTML snippets ---
     if (true) {
@@ -506,9 +507,8 @@
             });
         }
 
-
         // init method to observe the sidebar resize
-        sidebar_ro.observe(logo_box.parentNode);
+        sidebar_mo.observe(logo_box.parentNode, {attributes: true, childList: true, characterData: true});
     }
 
     /**

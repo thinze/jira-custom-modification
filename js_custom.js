@@ -784,13 +784,13 @@
      */
     function getDuedateLabel(due_date) {
         // calc deadline distance
-        let days_0  = 24 * (60 * 60 * 1000);
-        let days_1  = days_0 * 2;
-        let days_2  = days_0 * 3;
-        let tmp     = new Date().toDateString().split(' ');
-        let today   = new Date([tmp[2], tmp[1], tmp[3]].join('/'));
-        let t_diff  = new Date(due_date) - today;
-        let elem_css = '';
+        var days_0  = 24 * (60 * 60 * 1000);
+        var days_1  = days_0 * 2;
+        var days_2  = days_0 * 3;
+        var tmp     = new Date().toDateString().split(' ');
+        var today   = new Date([tmp[2], tmp[1], tmp[3]].join('/'));
+        var t_diff  = new Date(due_date) - today;
+        var elem_css = '';
         if (t_diff < 0) {
             elem_css = ' overrun';
         } else if (t_diff < days_0) {
@@ -809,7 +809,7 @@
     function markTasksByDeadline() {
         if (cfg && cfg.colored_tasks) {
             // build new task colors
-            let css = '' +
+            var css = '' +
                 '.overrun td, .overrun td a { color: ' + cfg.color_over + '!important; } ' +
                 '.todo-days-0 td, .todo-days-0 td a { color: ' + cfg.color_day0 + ' !important; } ' +
                 '.todo-days-1 td, .todo-days-1 td a { color: ' + cfg.color_day1 + ' !important; } ' +
@@ -821,18 +821,18 @@
                 '';
             updateCss(css, 'colored-tasks');
             // mark tasks in gadgets or other lists
-            let tasks   = document.querySelectorAll('td.duedate');
+            var tasks   = document.querySelectorAll('td.duedate');
             tasks.forEach(
                 function (td) {
-                    let status  = td.parentNode.querySelector('td.status');
+                    var status  = td.parentNode.querySelector('td.status');
                     if (status) {
                         status = status.innerText.toLowerCase();
                     } else {    // Fallback if td.status doesnt exists
                         status = 'offen';
                     }
                     if (done_stati.indexOf(status) == -1) {     // status not in done_stati
-                        let due_date = getStandardDate(td.innerText);
-                        let elem_css = getDuedateLabel(due_date);
+                        var due_date = getStandardDate(td.innerText);
+                        var elem_css = getDuedateLabel(due_date);
                         td.closest('tr').className += elem_css;
                     }
                 }
@@ -840,8 +840,8 @@
             // mark duedates in task view
             var task_duedate = document.querySelector('.issue-view #due-date');
             if (task_duedate) {
-                let due_date = getStandardDate(task_duedate.innerText);
-                let elem_css = getDuedateLabel(due_date);
+                var due_date = getStandardDate(task_duedate.innerText);
+                var elem_css = getDuedateLabel(due_date);
                 task_duedate.className += elem_css;
             }
         }

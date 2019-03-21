@@ -1,19 +1,19 @@
 // ==UserScript==
 // @name         jira-custom-modification
 // @namespace    http://tampermonkey.net/
-// @version      0.4.45
+// @version      0.4.46
 // @description  add some additional features for JIRA
 // @author       T. Hinze
 // @match        https://positivmultimedia.atlassian.net/*
 // @grant        none
-// @update       https://raw.githubusercontent.com/thinze/jira-custom-modification/master/js_custom.js?v=0.4.45
+// @update       https://raw.githubusercontent.com/thinze/jira-custom-modification/master/js_custom.js?v=0.4.46
 // ==/UserScript==
 
 (function() {
     'use strict';
 
     // --- settings ---
-    var js_version              = '0.4.45';
+    var js_version              = '0.4.46';
     var js_debug                = 1;
     var watcher1, watcher2;
     var done_stati              = ['erledigt', 'geschlossen'];
@@ -113,6 +113,8 @@
 
         var css = action_css + cfg_css +
             '#issuetype-single-select, div#project-single-select { max-width: none; width: 600px; } ' +
+            '.project-selector-container .project-ss { max-width: none !important; width: 100% !important; } ' +
+            '.project-selector-container .project-ss .aui-ss-field { max-width: none !important; width: 100% !important; } ' +
             '#issuetype-single-select > input, div#project-single-select > input { max-width: none; } ' +
             '#content #project_container .aui-ss-field#project-field { max-width: none !important; width: 600px; background: red; } ' +
             '#quick-search-field { display: inline-block; position: fixed; z-index: 99999; top: 65px; left: 64px; /* transform:translateX(-50%); */ ' +
@@ -124,6 +126,7 @@
             '#issuetable tr.tr-off, .gadget tr.tr-off { display: none !important; } ' +
             '';
     }
+
 
     // ===============  helper ==================
 

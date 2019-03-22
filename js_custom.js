@@ -1,19 +1,19 @@
 // ==UserScript==
 // @name         jira-custom-modification
 // @namespace    http://tampermonkey.net/
-// @version      0.4.46
+// @version      0.4.47
 // @description  add some additional features for JIRA
 // @author       T. Hinze
 // @match        https://positivmultimedia.atlassian.net/*
 // @grant        none
-// @update       https://raw.githubusercontent.com/thinze/jira-custom-modification/master/js_custom.js?v=0.4.46
+// @update       https://raw.githubusercontent.com/thinze/jira-custom-modification/master/js_custom.js?v=0.4.47
 // ==/UserScript==
 
 (function() {
     'use strict';
 
     // --- settings ---
-    var js_version              = '0.4.46';
+    var js_version              = '0.4.47';
     var js_debug                = 1;
     var watcher1, watcher2;
     var done_stati              = ['erledigt', 'geschlossen'];
@@ -878,7 +878,7 @@
      */
     function modifyIssueLinks() {
         if (cfg && cfg.old_issue_view) {
-            var task_links = document.querySelectorAll('a.issue-link');
+            var task_links = document.querySelectorAll('a.issue-link, a[href^="/browse/"]');
             if (task_links.length) {
                 task_links.forEach(
                     function (a) {

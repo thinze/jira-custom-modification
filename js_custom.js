@@ -1,19 +1,19 @@
 // ==UserScript==
 // @name         jira-custom-modification
 // @namespace    http://tampermonkey.net/
-// @version      0.4.47
+// @version      0.4.48
 // @description  add some additional features for JIRA
 // @author       T. Hinze
 // @match        https://positivmultimedia.atlassian.net/*
 // @grant        none
-// @update       https://raw.githubusercontent.com/thinze/jira-custom-modification/master/js_custom.js?v=0.4.47
+// @update       https://raw.githubusercontent.com/thinze/jira-custom-modification/master/js_custom.js?v=0.4.48
 // ==/UserScript==
 
 (function() {
     'use strict';
 
     // --- settings ---
-    var js_version              = '0.4.47';
+    var js_version              = '0.4.48';
     var js_debug                = 1;
     var watcher1, watcher2;
     var done_stati              = ['erledigt', 'geschlossen'];
@@ -32,6 +32,7 @@
             color_day0      : {type: 'color',   label: 'heute',                     val: '#cc33ff'},
             color_over      : {type: 'color',   label: 'überlaufen',                val: '#ff0000'},
             old_issue_view  : {type: 'bool',    label: 'alte Task-Ansicht',         val: 1},
+            print_pdf       : {type: 'bool',    label: 'PDF-Ansicht der Report',    val: 1},
             show_projectname: {type: 'bool',    label: 'zeige Projektname',         val: 0},
             quick_search    : {type: 'bool',    label: 'Schnellsuche',              val: 1},
             quick_actions   : {type: 'bool',    label: 'Quick-Actions',             val: 1},
@@ -413,6 +414,7 @@
                 createCfgOption('color_day2', sec);
                 createCfgOption('old_issue_view', sec);
                 createCfgOption('show_projectname', sec);
+                createCfgOption('print_pdf', sec);
             }
             sec = document.querySelector('#my-jira-cfg-misc .inner');
             if (sec) {
@@ -895,6 +897,27 @@
         }
     }
 
+    function addReportPdfButton() {
+        var toolbar = document.querySelector('.toolbar-split-right');
+        if (toolbar) {
+            var btn = document.createElement('button');
+            btn.id ='make-pdf';
+            btn.innerHTML = 'PDF';
+            toolbar.appendChild(btn);
+            btn.addEventListener('click', function() {
+                var weg = document.querySelectorAll('#navigation-app, #viewissuesidebar, .command-bar, #details-module, #eu.softwareplant.bigpicture__bigpicture-issue-wbs, #attachmentmodule, #view-subtasks');
+                if (weg) {
+                    weg.forEach(function(elem) {
+                        elem.parentNode.removeChild(elem);
+                    });
+                    window.print();
+                    location.href = location.href;  // simple refresh
+                }
+            });
+
+        }
+    }
+
     // ---  init script ---
     function startScript() {
         // verify loaded context, because sometimes page isnt complete loaded :-/
@@ -915,6 +938,7 @@
         markTasksByDeadline();
         markSpecialProjects();
         addProjektNameInTaskView();
+        addReportPdfButton();
     }
 
     // ---  window loaded  ---

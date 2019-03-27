@@ -10,6 +10,7 @@ Custom Javascript to add some features to the JIRA browser app.
 - add quick-search field to filter gadget content
 - mark tasks by deadline
 - add old issue view mode to any task link
+- new "PDF" button to print the reportings as PDF (use browser print function)
 - mark Service projects
 
 **Filters view**

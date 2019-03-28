@@ -1,19 +1,19 @@
 // ==UserScript==
 // @name         jira-custom-modification
 // @namespace    http://tampermonkey.net/
-// @version      0.4.48
+// @version      0.4.49
 // @description  add some additional features for JIRA
 // @author       T. Hinze
 // @match        https://positivmultimedia.atlassian.net/*
 // @grant        none
-// @update       https://raw.githubusercontent.com/thinze/jira-custom-modification/master/js_custom.js?v=0.4.48
+// @update       https://raw.githubusercontent.com/thinze/jira-custom-modification/master/js_custom.js?v=0.4.49
 // ==/UserScript==
 
 (function() {
     'use strict';
 
     // --- settings ---
-    var js_version              = '0.4.48';
+    var js_version              = '0.4.49';
     var js_debug                = 1;
     var watcher1, watcher2;
     var done_stati              = ['erledigt', 'geschlossen'];
@@ -101,10 +101,10 @@
 
         var action_css = '' +
             '#page-body .my-jira-logobox { padding-top: 85px; } ' +
-            '#my-jira-quick-actions { position:fixed; background:rgba(0, 0, 0, 0.65); padding:5px; z-index:99999; top:5px; left:64px; ' +
+            '#my-jira-quick-actions { position:fixed; background:rgba(0, 0, 0, 0.65); z-index:99999; top:5px; left:64px; ' +
             '  /* transform:translate(-50%, 0); */ }' +
             '#my-jira-quick-actions.hide { display: none; }' +
-            '#my-jira-dashboard-actions { }' +
+            '#my-jira-dashboard-actions { padding:5px; }' +
             '#my-jira-dashboard-actions h6 { color: #ccc; margin: -5px 0 5px; padding: 0; } ' +
             '#my-jira-dashboard-actions .row {}' +
             '#my-jira-dashboard-actions .row button { font-size:90%; margin:1px; }' +
@@ -900,18 +900,21 @@
     function addReportPdfButton() {
         var toolbar = document.querySelector('.toolbar-split-right');
         if (toolbar) {
+            var content = document.querySelector('div.content');
             var btn = document.createElement('button');
             btn.id ='make-pdf';
             btn.innerHTML = 'PDF';
             toolbar.appendChild(btn);
             btn.addEventListener('click', function() {
-                var weg = document.querySelectorAll('#navigation-app, #viewissuesidebar, .command-bar, #details-module, #eu.softwareplant.bigpicture__bigpicture-issue-wbs, #attachmentmodule, #view-subtasks');
+                var weg = document.querySelectorAll('#navigation-app, #viewissuesidebar, .command-bar, #details-module, #eu.softwareplant.bigpicture__bigpicture-issue-wbs, #attachmentmodule, #view-subtasks, .actionContainer .action-links, .tabwrap.tabs2, .mod-footer .ops');
                 if (weg) {
                     weg.forEach(function(elem) {
                         elem.parentNode.removeChild(elem);
                     });
+                    content.style.fontSize = '11px';
+                    content.style.leineHeight = '115%';
                     window.print();
-                    location.href = location.href;  // simple refresh
+                    // location.href = location.href;  // simple refresh
                 }
             });
 

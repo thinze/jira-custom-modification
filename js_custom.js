@@ -860,7 +860,7 @@
     function useAlwaysOldIssueView() {
         if (cfg && cfg.old_issue_view) {
             // old view-mode link on issue view
-            var a = document.querySelector("#jira-frontend-content .gGZyaD a[href*='?oldIssueView=true']");
+            var a = document.querySelector("#jira-frontend-content a[href*='?oldIssueView=true']");
             if (a) {
                 window.clearInterval(watcher1);
                 window.stop();

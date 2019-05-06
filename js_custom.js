@@ -1,19 +1,18 @@
 // ==UserScript==
 // @name         jira-custom-modification
 // @namespace    http://tampermonkey.net/
-// @version      0.4.50
+// @version      0.4.51
 // @description  add some additional features for JIRA
 // @author       T. Hinze
 // @match        https://positivmultimedia.atlassian.net/*
 // @grant        none
-// @update       https://raw.githubusercontent.com/thinze/jira-custom-modification/master/js_custom.js?v=0.4.50
 // ==/UserScript==
 
 (function() {
     'use strict';
 
     // --- settings ---
-    var js_version              = '0.4.50';
+    var js_version              = '0.4.51';
     var js_debug                = 1;
     var watcher1, watcher2;
     var done_stati              = ['erledigt', 'geschlossen'];
@@ -935,7 +934,7 @@
         // verify loaded context, because sometimes page isnt complete loaded :-/
         if (location.href.indexOf('/Dashboard.jspa') !== -1) {
             // check for existing dashboard content
-            if (!document.querySelector('#dashboard-content .dashboard-shim, #jira-frontend-content #jira-frontend')) {
+            if (!document.querySelector('#dashboard-content .dashboard-shim, #jira-frontend-page #jira-frontend-content')) {
                 _debug('reload page');
                 location.href = location.href;  // reload current page
             }

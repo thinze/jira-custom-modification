@@ -935,7 +935,7 @@
         // verify loaded context, because sometimes page isnt complete loaded :-/
         if (location.href.indexOf('/Dashboard.jspa') !== -1) {
             // check for existing dashboard content
-            if (!document.querySelector('#dashboard-content .dashboard-shim')) {
+            if (!document.querySelector('#dashboard-content .dashboard-shim, #jira-frontend-content #jira-frontend')) {
                 _debug('reload page');
                 location.href = location.href;  // reload current page
             }

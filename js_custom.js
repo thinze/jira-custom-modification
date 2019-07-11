@@ -936,7 +936,7 @@
             // check for existing dashboard content
             if (!document.querySelector('#dashboard-content .dashboard-shim, #jira-frontend-page #jira-frontend-content')) {
                 _debug('reload page');
-                location.href = location.href;  // reload current page
+                // location.href = location.href;  // reload current page
             }
         }
         //---

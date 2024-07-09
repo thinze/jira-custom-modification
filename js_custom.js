@@ -12,7 +12,7 @@
     'use strict';
 
     // --- settings ---
-    var js_version              = '0.4.51';
+    var js_version              = '0.4.6';
     var js_debug                = 1;
     var watcher1, watcher2;
     var done_stati              = ['erledigt', 'geschlossen'];
@@ -114,7 +114,7 @@
 
         // action CSS);
         css.push('#page-body .my-jira-logobox { padding-top: 85px; } ');
-        css.push('#my-jira-quick-actions { position:fixed; background:rgba(0, 0, 0, 0.65); z-index:99999; top:5px; left:64px; ');
+        css.push('#my-jira-quick-actions { position:fixed; background:rgba(0, 0, 0, 0.65); z-index:99999; bottom:5px; left:64px; ');
         css.push('  /* transform:translate(-50%, 0); */ }');
         css.push('#my-jira-quick-actions.hide { display: none; }');
         css.push('#my-jira-dashboard-actions { padding:5px; }');
@@ -138,6 +138,13 @@
         css.push('#quick-search-clear:hover { cursor: pointer; } ');
         css.push('#issuetable tr.tr-off, .gadget tr.tr-off { display: none !important; } ');
         css.push('#jira #page .hide-for-pdf-view { display: none !important; }');
+
+        // project board
+        css.push('#jira-frontend #ak-main-content .UsyDT { width: 100%; }');
+        css.push('#jira-frontend #ak-main-content .kQqZHU { min-width: auto; max-width: 33%; padding: 0 10px; }');
+        css.push('#jira-frontend #ak-main-content .kQqZHU .cVZKXu { min-width: auto; max-width: none; width: 100%; }');
+        css.push('#jira-frontend #ak-main-content .kQqZHU .iFtqNB { min-width: auto; max-width: none; width: 100%; }');
+        css.push('#jira-frontend #ak-main-content .kQqZHU .iFtqNB .cpqjBx { min-width: auto; max-width: none; width: 100%; }');
 
         css = css.join('');
 
@@ -280,7 +287,7 @@
     }
 
     function initSetupDialog() {
-        var nav = document.querySelector('#navigation-app');
+        var nav = document.querySelector('header > nav');// #navigation-app');
         var div = document.createElement('DIV');
         div.id  = 'my-jira-cfg-dialog';
         div.innerHTML = cfg_html.trim();
@@ -500,14 +507,14 @@
         container.id  = 'my-jira-quick-actions';
         document.querySelector('body').appendChild(container);
         // move sidebar downward
-        var logo_box = document.querySelector("div[data-test-id='ContextualNavigation'] > div > div > div");
+        var logo_box = document.querySelector("#navigation-app"); // "div[data-test-id='ContextualNavigation'] > div > div > div");
         logo_box.className += ' my-jira-logobox';
         // add actions
         addDashboardQuickActions();
         addQuickSearch();
 
         // close quick-actions if the sidebar is minimized
-        var btn = document.querySelector('button.css-qm60v3');
+        var btn = document.querySelector('#jira-frontend');
         if (btn) {
             btn.addEventListener('click', toggleDashboardQuickActions);
         }
@@ -628,12 +635,9 @@
      * collapse all expanded gadgets
      */
     function widgetsCollapseAll() {
-        var widgets = document.querySelectorAll('.dashboard-item-content');
+        var widgets = document.querySelectorAll("div[data-rbd-draggable-context-id='3'] .sc-eBOlBG.dkKZln:nth-child(1)");
         widgets.forEach(function(item, idx) {
-            if (item.className.indexOf(' minimization') == -1) {
-                item.className = item.className + ' minimization';
-                item.previousSibling.querySelector('.dashboard-item-title').dispatchEvent(new Event('dblclick'));
-            }
+            item.dispatchEvent(new Event('click'));
         });
     }
 
@@ -641,10 +645,9 @@
      * expand all collapsed gadgets
      */
     function widgetsExpandAll() {
-        var widgets = document.querySelectorAll('.dashboard-item-content.minimization');
+        var widgets = document.querySelectorAll("div[data-rbd-draggable-context-id='3'] .sc-eBOlBG.dkKZln:nth-child(2)");
         widgets.forEach(function(item, idx) {
-            item.className = item.className.replace(' minimization', '');
-            item.previousSibling.querySelector('.dashboard-item-title').dispatchEvent(new Event('dblclick'));
+            item.dispatchEvent(new Event('click'));
         });
         updateGadgets();
     }

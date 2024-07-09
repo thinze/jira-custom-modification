@@ -49,6 +49,20 @@
         });
     });
 
+    var aui_msg = new MutationObserver( function(mutations) {
+        mutations.forEach(function(mutation) {
+            console.log(mutation.type + ' = ' + mutation.nodeList[0].id );
+            if (mutation.type == 'childList' && mutation.nodeList.length > 0 && mutation.nodeList[0].id == 'aui-flag-container') {
+                var a = document.querySelector('.aui-message-success a.issue-link');
+                if (a) {
+                    if (a.href.indexOf('/browse/') !== -1) {
+                        a.href += '?oldIssueView=true';
+                    }
+                }
+            }
+        });
+    });
+
     // --- HTML snippets ---
     if (true) {
 
@@ -929,6 +943,11 @@
         }
     }
 
+    function waitForAuiMessage() {
+        // init method to observe the sidebar resize
+        aui_msg.observe(document, {attributes: true, childList: true, characterData: true});
+    }
+
     // ---  init script ---
     function startScript() {
         // verify loaded context, because sometimes page isnt complete loaded :-/
@@ -950,6 +969,7 @@
         markSpecialProjects();
         addProjektNameInTaskView();
         addReportPdfButton();
+        waitForAuiMessage();
     }
 
     // ---  window loaded  ---

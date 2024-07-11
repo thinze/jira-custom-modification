@@ -12,7 +12,7 @@
     'use strict';
 
     // --- settings ---
-    var js_version              = '0.4.6';
+    var js_version              = '0.4.7';
     var js_debug                = 1;
     var watcher1, watcher2;
     var done_stati              = ['erledigt', 'geschlossen'];
@@ -951,6 +951,62 @@
         aui_msg.observe(document, {attributes: true, childList: true, characterData: true});
     }
 
+    function sumRemainingHours(e) {
+        var widgetTitle = e.target.parentNode;
+        var widget = widgetTitle.closest("div[id^='gadget-title']").parentNode.parentNode.parentNode;
+        var tasks = widget.querySelectorAll(".aggregatetimeestimate");
+        var sum = 0;
+        tasks.forEach(
+            function (task) {
+                var fullTime = task.innerText.split(', ');
+                fullTime.forEach(
+                    function(subTime) {
+                        var val = subTime.split(' ');
+                        if (val.length > 1) {   // skip leere Werte
+                            switch (val[1]) {
+                                case 'minute':
+                                case 'minutes':
+                                    sum += parseInt(val[0]);
+                                    break;
+                                case 'hour':
+                                case 'hours':
+                                    sum += (parseInt(val[0]) * 60);
+                            }
+                        }
+                    }
+                );
+            }
+        );
+        var sum_h   = parseInt(sum / 60);
+        var sum_m   = parseInt(sum % 60);
+        var txt     = document.createElement('em');
+        txt.style.display = 'inline-block';
+        txt.style.marginLeft = '30px';
+        txt.innerText = ' Summe: [ ' + sum_h + 'h ' + sum_m + 'm ]';
+        widgetTitle.querySelector('button').append(txt);
+    }
+
+    function addWidgetSumButton() {
+        const skip_widgets = ['Bitte prüfen!', 'meine Aufgaben an Mitarbeiter', 'Aktivitätsströme', 'Filterergebnisse:','meine Reportings', 'alle meinen offenen Aufgaben'];
+        var widgets = document.querySelectorAll("._1bsb1osq._2rkoftgi._v564mfn2._11q7vuon > div div[id^='gadget-title-'] div[id^='gadget-title-'] h2 div");
+        console.log('widgets = ' + widgets.length);
+        if (widgets.length) {
+            widgets.forEach(
+                function(widgetTitle) {
+                    if (skip_widgets.indexOf(widgetTitle.innerText) == -1) {
+                        var btn = document.createElement('button')
+                        btn.innerText = 'Restzeit zählen';
+                        btn.style.marginLeft = '30px';
+                        btn.addEventListener('click', sumRemainingHours);
+                        widgetTitle.appendChild(btn);
+                    }
+
+                    // sumWidgetsHours(widgetTitle);
+                }
+            );    // nur rechte Seite
+        }
+    }
+
     // ---  init script ---
     function startScript() {
         // verify loaded context, because sometimes page isnt complete loaded :-/
@@ -969,6 +1025,7 @@
         watcher2 = window.setInterval(waitForSidebar, 100);
         modifyIssueLinks();
         markTasksByDeadline();
+        addWidgetSumButton();
         markSpecialProjects();
         addProjektNameInTaskView();
         addReportPdfButton();

@@ -184,11 +184,12 @@
    *
    */
   function insertCss(css, css_id) {
-    var style   = document.createElement('STYLE');
+    var style = document.createElement('STYLE');
     if (css_id) {
       style.id = css_id;
     }
-    style.innerHTML = css;
+    var node = document.createTextNode(css);
+    style.appendChild(node);
     document.querySelector('head').appendChild(style);
   }
 

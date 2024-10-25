@@ -2,8 +2,8 @@
 // @name          jira-modification
 // @namespace     http://tampermonkey.net/
 // @version       0.4.51
-// @updateURL     https://github.com/thinze/jira-custom-modification/raw/refs/heads/master/jira_modifications.js
-// @downloadURL   https://github.com/thinze/jira-custom-modification/raw/refs/heads/master/jira_modifications.js
+// @updateURL     https://github.com/thinze/jira-custom-modification/raw/refs/heads/master/jira-custom-modifications.js
+// @downloadURL   https://github.com/thinze/jira-custom-modification/raw/refs/heads/master/jira-custom-modifications.js
 // @description   add some additional features for JIRA
 // @author        T. Hinze
 // @match         https://positivmultimedia.atlassian.net/*
